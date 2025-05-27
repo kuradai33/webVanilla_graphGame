@@ -1,5 +1,5 @@
-const CANVAS_HEIGHT: number = 500, CANVAS_WIDTH: number = 500;
-const NODE_RADIUS = 10, EDGE_WIDTH = 5;
+import * as graph from "./graph";
+import * as define from "./define";
 
 const controller = new AbortController();
 const signal = controller.signal;
@@ -8,182 +8,6 @@ let ele_body: HTMLBodyElement;
 let ele_canvas: HTMLCanvasElement;
 let ele_pos: HTMLElement;
 let ele_info: HTMLElement;
-
-class Shape{
-    draw(){};
-}
-
-class GraphNode extends Shape{
-    public id: number;
-    private center_x: number;
-    private center_y: number;
-    private ctx: CanvasRenderingContext2D;
-    private fill_color: "black" | "red" = "black";
-
-    constructor(ctx: CanvasRenderingContext2D, cx: number, cy: number, id: number){
-        super();
-        this.ctx = ctx;
-        this.center_x = cx;
-        this.center_y = cy;
-        this.id = id;
-    }
-
-    get_pos(): [number, number]{ return [this.center_x, this.center_y] }
-
-    get_distance(x: number, y: number): number{
-        return Math.sqrt((this.center_x - x) ** 2 + (y - this.center_y) ** 2);
-    }
-
-    set_fillcolor(c: "black" | "red") {
-        this.fill_color = c;
-    }
-
-    set_pos(x: number, y: number){
-        this.center_x = x;
-        this.center_y = y;
-    }
-
-    draw(){
-        this.ctx.beginPath();
-        this.ctx.arc(this.center_x, this.center_y, NODE_RADIUS, 0, 2 * Math.PI);
-        this.ctx.fillStyle = this.fill_color;
-        this.ctx.fill();
-        this.ctx.closePath();
-    }
-};
-
-class GraphEdge extends Shape{
-    private node1: GraphNode;
-    private node2: GraphNode;
-    private ctx: CanvasRenderingContext2D;
-
-    private color: "black" | "red" | "yellow" = "black";
-
-    constructor(ctx: CanvasRenderingContext2D, n1: GraphNode, n2: GraphNode){
-        super();
-        this.ctx = ctx;
-        this.node1 = n1;
-        this.node2 = n2;
-    }
-
-    set_color(c: "black" | "red" | "yellow") { this.color = c; }
-
-    draw(){
-        const lineWidth = this.ctx.lineWidth;
-        const pre_color = this.ctx.strokeStyle;
-        const [x1, y1] = this.node1.get_pos(), [x2, y2] = this.node2.get_pos();
-
-        this.ctx.lineWidth = EDGE_WIDTH;
-        this.ctx.strokeStyle = this.color;
-        this.ctx.beginPath();
-        this.ctx.moveTo(x1, y1);
-        this.ctx.lineTo(x2, y2);
-        this.ctx.stroke();
-        this.ctx.closePath();
-
-        this.ctx.lineWidth = lineWidth;
-        this.ctx.strokeStyle = pre_color;
-    }
-
-    check_crossed(edge: GraphEdge){
-        // https://qiita.com/zu_rin/items/e04fdec4e3dec6072104
-        const [a1x, a1y] = this.node1.get_pos();
-        const [a2x, a2y] = this.node2.get_pos();
-        const [b1x, b1y] = edge.node1.get_pos();
-        const [b2x, b2y] = edge.node2.get_pos();
-
-        const s1 = (a1x - a2x) * (b1y - a1y) - (a1y - a2y) * (b1x - a1x);
-        const t1 = (a1x - a2x) * (b2y - a1y) - (a1y - a2y) * (b2x - a1x);
-        if(s1 * t1 > 0) return false;
-
-        const s2 = (b1x - b2x) * (a1y - b1y) - (b1y - b2y) * (a1x - b1x);
-        const t2 = (b1x - b2x) * (a2y - b1y) - (b1y - b2y) * (a2x - b1x);
-        if(s2 * t2 > 0) return false;
-
-        return true;
-    }
-
-    check_neighbor(edge: GraphEdge){
-        return this.node1 == edge.node1 || this.node1 == edge.node2 || this.node2 == edge.node1 || this.node2 == edge.node2;
-    }
-};
-
-class OperateGraph{
-    private graph_nodes: GraphNode[] = [];
-    private graph_edges: GraphEdge[] = [];
-    private ctx: CanvasRenderingContext2D;
-
-    constructor(ctx: CanvasRenderingContext2D){
-        this.ctx = ctx;
-    }
-
-    public get_nodes(): GraphNode[]{ return this.graph_nodes; }
-    public get_ctx(): CanvasRenderingContext2D{ return this.ctx; }
-
-    public add_graph_ele(e: Shape){
-        if(e instanceof GraphNode) this.graph_nodes.push(e);
-        else if(e instanceof GraphEdge) this.graph_edges.push(e);
-    }
-
-    public update_edge_color(): boolean{
-        const crossed = this.check_crossed_edges();
-        const len = this.graph_edges.length;
-
-        let crossed_graph = false;
-        for(let i = 0; i < len; i++){
-            this.graph_edges[i].set_color(crossed[i] ? "red" : "black");
-            crossed_graph ||= crossed[i];
-        }
-
-        return crossed_graph;
-    }
-
-    public check_crossed_graph(): boolean{
-        const len = this.graph_edges.length;
-        const crossed = this.check_crossed_edges();
-
-        return !(crossed.every((e) => !e));
-    }
-
-    private check_crossed_edges(): boolean[]{
-        const len = this.graph_edges.length;
-        let crossed: boolean[] = Array(len).fill(false);
-        for(let i = 0; i < len; i++) for(let j = i + 1; j < len; j++){
-            if(this.graph_edges[i].check_neighbor(this.graph_edges[j])) continue;
-            if(this.graph_edges[i].check_crossed(this.graph_edges[j])){
-                crossed[i] = true;
-                crossed[j] = true;
-            }
-        }
-        return crossed;
-    }
-
-    public draw_all(){
-        this.ctx.clearRect(0, 0, CANVAS_HEIGHT, CANVAS_WIDTH);
-        for(const e of this.graph_edges) e.draw();
-        for(const e of this.graph_nodes) e.draw();
-    }
-
-    public get_closest_shape(x: number, y: number): GraphNode | null{
-        let min_dist: number = Infinity;
-        let closest_node: GraphNode | null = null;
-        for(const node of this.graph_nodes){
-            const dist = node.get_distance(x, y);
-            console.log(`${node.id} ${dist}`);
-            if(min_dist > dist){
-                min_dist = dist;
-                closest_node = node;
-            }
-        }
-        return closest_node;
-    }
-
-    public draw_cleared_graph(){
-        for(const edge of this.graph_edges) edge.set_color("yellow");
-        console.log("fin");
-        this.draw_all();
-    }
-};
 
 init_process();
 function init_process(){
@@ -199,8 +23,8 @@ function init_process(){
         return;
     }
     // キャンバスの大きさを設定
-    game_screen.height = CANVAS_HEIGHT;
-    game_screen.width = CANVAS_WIDTH;
+    game_screen.height = define.CANVAS_HEIGHT;
+    game_screen.width = define.CANVAS_WIDTH;
     ele_canvas = game_screen;
 
     const body = document.getElementsByTagName("body")[0];
@@ -222,7 +46,7 @@ function init_process(){
     ele_info = info;
 
     // 描画
-    const opeg = new OperateGraph(ctx);
+    const opeg = new graph.OperateGraph(ctx);
     create_planegraph(ctx, opeg);
 
     opeg.update_edge_color();
@@ -232,11 +56,11 @@ function init_process(){
 
 }
 
-function setting_canvas_event(opeg: OperateGraph){
+function setting_canvas_event(opeg: graph.OperateGraph){
     let is_dragging = false;
     let mouse_startX: number, mouse_startY: number;
     let node_startX: number, node_startY: number;
-    let operated_node: GraphNode | null;
+    let operated_node: graph.GraphNode | null;
 
     ele_canvas.addEventListener("mousedown", (e: MouseEvent) => {
         const rect = ele_canvas.getBoundingClientRect();
@@ -263,8 +87,8 @@ function setting_canvas_event(opeg: OperateGraph){
         const rect = ele_canvas.getBoundingClientRect();
         const x: number = e.clientX - rect.left;
         const y: number = e.clientY - rect.top;
-        const processed_x = Math.min(Math.max(x - mouse_startX + node_startX, NODE_RADIUS), CANVAS_WIDTH - NODE_RADIUS);
-        const processed_y = Math.min(Math.max(y - mouse_startY + node_startY, NODE_RADIUS), CANVAS_HEIGHT - NODE_RADIUS);
+        const processed_x = Math.min(Math.max(x - mouse_startX + node_startX, define.NODE_RADIUS), define.CANVAS_WIDTH - define.NODE_RADIUS);
+        const processed_y = Math.min(Math.max(y - mouse_startY + node_startY, define.NODE_RADIUS), define.CANVAS_HEIGHT - define.NODE_RADIUS);
 
         operated_node?.set_pos(processed_x, processed_y);
         opeg.update_edge_color();
@@ -287,13 +111,13 @@ function setting_canvas_event(opeg: OperateGraph){
     });
 }
 
-function create_planegraph(ctx: CanvasRenderingContext2D, opeg: OperateGraph){
+function create_planegraph(ctx: CanvasRenderingContext2D, opeg: graph.OperateGraph){
     // 頂点を作成
     const CNT_NODE = 8;
     for(let i = 0; i < CNT_NODE; i++){
         let x = Math.random() * 460 + 20;
         let y = Math.random() * 460 + 20;
-        const node = new GraphNode(ctx, x, y, i);
+        const node = new graph.GraphNode(ctx, x, y, i);
         opeg.add_graph_ele(node);
     }
 
@@ -301,7 +125,7 @@ function create_planegraph(ctx: CanvasRenderingContext2D, opeg: OperateGraph){
     const nodes = opeg.get_nodes();
     const edges_num = create_planegraph_edges(CNT_NODE);
     for(const edge_num of edges_num){
-        opeg.add_graph_ele(new GraphEdge(ctx, nodes[edge_num[0]], nodes[edge_num[1]]));
+        opeg.add_graph_ele(new graph.GraphEdge(ctx, nodes[edge_num[0]], nodes[edge_num[1]]));
     }
 
     ele_info.innerText = `node:${CNT_NODE} edge:${edges_num.length}`;
@@ -351,7 +175,7 @@ function get_randint(start: number, end: number): number{ // [start, end)
     return Math.floor(Math.random() * (end - start)) + start;
 }
 
-function process_fingame(opeg: OperateGraph){
+function process_fingame(opeg: graph.OperateGraph){
     // イベントリスナを削除
     controller.abort();
 
