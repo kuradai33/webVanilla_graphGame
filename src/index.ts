@@ -4,170 +4,176 @@ import * as define from "./define";
 const controller = new AbortController();
 const signal = controller.signal;
 
-let ele_body: HTMLBodyElement;
-let ele_canvas: HTMLCanvasElement;
-let ele_pos: HTMLElement;
-let ele_info: HTMLElement;
+const body = document.getElementsByTagName("body")[0];
+// キャンバスを取得
+const gameScreen = document.getElementById("game_screen")! as HTMLCanvasElement;
+const textInfo = document.getElementById("info")!;
 
-init_process();
-function init_process(){
-    // キャンバスを取得
-    const game_screen = document.getElementById("game_screen");
-    if(game_screen == null || !(game_screen instanceof HTMLCanvasElement)){
-        console.error("キャンバスが存在しません");
-        return;
-    }
-    const ctx = game_screen.getContext("2d");
-    if(ctx == null){
-        console.error("キャンバスのコンテキストの取得に失敗しました");
-        return;
-    }
+document.addEventListener("DOMContentLoaded", initialize);
+
+/**
+ * ページ読み込み時の初期化関数。
+ * キャンバスの設定・グラフの描画・イベント登録を行う。
+ */
+function initialize() {
+    // キャンバスの描画用オブジェクトを取得
+    const ctx = gameScreen.getContext("2d")!;
     // キャンバスの大きさを設定
-    game_screen.height = define.CANVAS_HEIGHT;
-    game_screen.width = define.CANVAS_WIDTH;
-    ele_canvas = game_screen;
+    gameScreen.height = define.CANVAS_HEIGHT;
+    gameScreen.width = define.CANVAS_WIDTH;
 
-    const body = document.getElementsByTagName("body")[0];
-    ele_body = body;
+    // 初期描画
+    const opeg = new graph.Graph(ctx);
+    createPlanegraph(opeg, 15); // 平面グラフを作成
 
-    const pos = document.getElementById("pos");
-    if(pos == null){
-        console.error("存在しません");
-        return;
-    }
-    ele_pos = pos;
-    ele_pos.innerText = `x:0 y:0 drag:false`;
+    opeg.updateEdgeColor(); // 辺の交差情報を更新
+    opeg.draw(); // 全ての要素を描画
 
-    const info = document.getElementById("info");
-    if(info == null){
-        console.error("存在しません");
-        return;
-    }
-    ele_info = info;
-
-    // 描画
-    const opeg = new graph.OperateGraph(ctx);
-    create_planegraph(ctx, opeg);
-
-    opeg.update_edge_color();
-    opeg.draw_all();
-
-    setting_canvas_event(opeg);
-
+    // キャンバスなどにマウスイベントを設定
+    settingCanvasEvent(opeg);
 }
 
-function setting_canvas_event(opeg: graph.OperateGraph){
-    let is_dragging = false;
-    let mouse_startX: number, mouse_startY: number;
-    let node_startX: number, node_startY: number;
-    let operated_node: graph.GraphNode | null;
+/**
+ * キャンバス上のマウス操作イベントを設定する。
+ * 頂点の選択やドラッグによる移動などを制御する。
+ * @param {graph.Graph} opeg グラフ操作オブジェクト
+ */
+function settingCanvasEvent(opeg: graph.Graph) {
+    let isDragging = false;
+    let mouseStartX: number, mouseStartY: number;
+    let nodeStartX: number, nodeStartY: number;
+    let operatedNode: graph.GraphNode | null;
 
-    ele_canvas.addEventListener("mousedown", (e: MouseEvent) => {
-        const rect = ele_canvas.getBoundingClientRect();
+    gameScreen.addEventListener("mousedown", (e: MouseEvent) => {
+        const rect = gameScreen.getBoundingClientRect();
         const x: number = e.clientX - rect.left;
         const y: number = e.clientY - rect.top;
 
-        mouse_startX = x;
-        mouse_startY = y;
+        mouseStartX = x;
+        mouseStartY = y;
 
-        operated_node = opeg.get_closest_shape(x, y);
-        operated_node?.set_fillcolor("red");
-        operated_node?.draw();
-        const pos = operated_node?.get_pos();
-        if(pos != undefined){
-            node_startX = pos[0];
-            node_startY = pos[1];
+        operatedNode = opeg.getClosestNode(x, y);
+        operatedNode?.setFillColor("red");
+        operatedNode?.draw();
+        const pos = operatedNode?.getPos();
+        if (pos != undefined) {
+            nodeStartX = pos[0];
+            nodeStartY = pos[1];
         }
-        
-        is_dragging = true;
-        ele_pos.innerText = `x:${x} y:${y} drag:${is_dragging}`;
-    }, {signal: signal});
-    ele_body.addEventListener("mousemove", (e: MouseEvent) => {
-        if(!is_dragging) return;
-        const rect = ele_canvas.getBoundingClientRect();
+
+        isDragging = true;
+    }, { signal: signal });
+    body.addEventListener("mousemove", (e: MouseEvent) => {
+        if (!isDragging) return;
+        const rect = gameScreen.getBoundingClientRect();
         const x: number = e.clientX - rect.left;
         const y: number = e.clientY - rect.top;
-        const processed_x = Math.min(Math.max(x - mouse_startX + node_startX, define.NODE_RADIUS), define.CANVAS_WIDTH - define.NODE_RADIUS);
-        const processed_y = Math.min(Math.max(y - mouse_startY + node_startY, define.NODE_RADIUS), define.CANVAS_HEIGHT - define.NODE_RADIUS);
+        const processed_x = Math.min(Math.max(x - mouseStartX + nodeStartX, define.NODE_RADIUS), define.CANVAS_WIDTH - define.NODE_RADIUS);
+        const processed_y = Math.min(Math.max(y - mouseStartY + nodeStartY, define.NODE_RADIUS), define.CANVAS_HEIGHT - define.NODE_RADIUS);
 
-        operated_node?.set_pos(processed_x, processed_y);
-        opeg.update_edge_color();
-        opeg.draw_all();
-        ele_pos.innerText = `x:${x} y:${y} drag:${is_dragging}`;
+        operatedNode?.setPos(processed_x, processed_y);
+        opeg.updateEdgeColor();
+        opeg.draw();
     });
-    ele_body.addEventListener("mouseup", (e: MouseEvent) => {
-        if(!is_dragging) return;
-        operated_node?.set_fillcolor("black");
-        operated_node?.draw();
-        is_dragging = false;
-        if(!opeg.check_crossed_graph()){
-            process_fingame(opeg);
+    body.addEventListener("mouseup", (e: MouseEvent) => {
+        if (!isDragging) return;
+        operatedNode?.setFillColor("black");
+        operatedNode?.draw();
+        isDragging = false;
+        if (!opeg.checkCrossedGraph()) {
+            finishGame(opeg);
         }
-
-        const rect = ele_canvas.getBoundingClientRect();
-        const x: number = e.clientX - rect.left;
-        const y: number = e.clientY - rect.top;
-        ele_pos.innerText = `x:${x} y:${y} drag:${is_dragging}`;
     });
 }
 
-function create_planegraph(ctx: CanvasRenderingContext2D, opeg: graph.OperateGraph){
+/**
+ * 平面グラフを構成する頂点と辺を作成する。
+ * @param {graph.Graph} opeg グラフ操作オブジェクト
+ * @param {number} cntNode 作成する頂点の数
+ */
+function createPlanegraph(opeg: graph.Graph, cntNode: number) {
+    const ctx = opeg.getCtx();
+
     // 頂点を作成
-    const CNT_NODE = 8;
-    for(let i = 0; i < CNT_NODE; i++){
+    const CNT_NODE = cntNode;
+    let preNode = null;
+    for (let i = 0; i < CNT_NODE; i++) {
         let x = Math.random() * 460 + 20;
         let y = Math.random() * 460 + 20;
         const node = new graph.GraphNode(ctx, x, y, i);
-        opeg.add_graph_ele(node);
+        opeg.addGraphElement(node);
+
+        if (getRandint(0, 2) == 0 && preNode != null) {
+            opeg.addGraphElement(new graph.GraphEdge(ctx, preNode, node));
+        }
+        preNode = node;
     }
 
     // 辺を作成
-    const nodes = opeg.get_nodes();
-    const edges_num = create_planegraph_edges(CNT_NODE);
-    for(const edge_num of edges_num){
-        opeg.add_graph_ele(new graph.GraphEdge(ctx, nodes[edge_num[0]], nodes[edge_num[1]]));
+    const nodes = opeg.getNodes();
+    const edges = createPlanegraphEdges(CNT_NODE);
+    for (const edge of edges) {
+        opeg.addGraphElement(new graph.GraphEdge(ctx, nodes[edge[0]], nodes[edge[1]]));
     }
 
-    ele_info.innerText = `node:${CNT_NODE} edge:${edges_num.length}`;
+    textInfo.innerText = `node:${CNT_NODE} edge:${edges.length}`;
 }
 
-function create_planegraph_edges(cnt_node: number): [number, number][]{
-    let left_edges: [number, number][] = [], right_edges: [number, number][] = [];
-    let cnt_fail = 0;
-    while(cnt_fail < 1000){
-        const add_left = get_randint(0, 2) == 0;
-        const start = get_randint(0, cnt_node - 1);
-        const end = get_randint(start + 1, cnt_node);
-        const new_edge: [number, number] = [start, end];
-        if(add_left && check_crossing(left_edges, new_edge)) left_edges.push(new_edge);
-        else if(check_crossing(right_edges, new_edge)) right_edges.push(new_edge);
-        else{
-            cnt_fail++;
+/**
+ * 平面グラフの辺をランダムに生成する。
+ * @param {number} cntNode 頂点数
+ * @returns {[number, number][]} 有効な辺のリスト
+ */
+function createPlanegraphEdges(cntNode: number): [number, number][] {
+    let edgesLeft: [number, number][] = [], edgesRight: [number, number][] = [];
+    let cntFail = 0;
+    while (cntFail < 1000) {
+        const addLeft = getRandint(0, 2) == 0;
+        const start = getRandint(0, cntNode - 2);
+        const end = getRandint(start + 2, cntNode);
+        const newEdge: [number, number] = [start, end];
+        if (addLeft && checkCrossing(edgesLeft, newEdge)) edgesLeft.push(newEdge);
+        else if (checkCrossing(edgesRight, newEdge)) edgesRight.push(newEdge);
+        else {
+            cntFail++;
             continue;
         }
-        cnt_fail = 0;
+        cntFail = 0;
     }
 
-    console.log(left_edges.sort());
+    console.log(edgesLeft.sort());
     console.log("-----");
-    console.log(right_edges.sort());
+    console.log(edgesRight.sort());
 
-    const all_edges = left_edges.concat(right_edges);
+    const all_edges = edgesLeft.concat(edgesRight);
     return all_edges;
 }
 
-function check_crossing(existed_edges: [number, number][], new_edge: [number, number]): boolean{
-    for(const edge of existed_edges){
-        const inside = edge[0] <= new_edge[0] && new_edge[1] <= edge[1];
-        const outside = new_edge[0] <= edge[0] && edge[1] <= new_edge[1];
-        const equal = new_edge[0] == edge[0] && edge[1] == new_edge[1];
-        if(equal || !(inside || outside)) return false;
+/**
+ * 新たな辺を追加したときの交差判定を行う。
+ * @param {[number, number][]} existedEdges 既存の辺集合
+ * @param {[number, number]} newEdge 新たに追加する辺
+ * @returns {boolean} 交差が起こるかどうか
+ */
+function checkCrossing(existedEdges: [number, number][], newEdge: [number, number]): boolean {
+    for (const edge of existedEdges) {
+        const inside = edge[0] <= newEdge[0] && newEdge[1] <= edge[1];
+        const outside = newEdge[0] <= edge[0] && edge[1] <= newEdge[1];
+        const equal = newEdge[0] == edge[0] && edge[1] == newEdge[1];
+        if (equal || !(inside || outside)) return false;
     }
     return true;
 }
 
-function get_randint(start: number, end: number): number{ // [start, end)
-    if(start > end){
+/**
+ * 指定した範囲の整数をランダムに生成する。
+ * [start, end)の範囲。
+ * @param {number} start 範囲の始まり（含む）
+ * @param {number} end 範囲の終わり（含まない）
+ * @returns ランダムな整数
+ */
+function getRandint(start: number, end: number): number { // [start, end)
+    if (start > end) {
         const tmp = start;
         start = end;
         end = tmp;
@@ -175,10 +181,14 @@ function get_randint(start: number, end: number): number{ // [start, end)
     return Math.floor(Math.random() * (end - start)) + start;
 }
 
-function process_fingame(opeg: graph.OperateGraph){
+/**
+ * ゲーム終了時の処理を行う。
+ * @param {graph.Graph} opeg グラフ操作オブジェクト
+ */
+function finishGame(opeg: graph.Graph) {
     // イベントリスナを削除
     controller.abort();
 
-    opeg.draw_cleared_graph();
-    ele_info.innerText = "CLEAR!";
+    opeg.drawClearedGraph();
+    textInfo.innerText = "CLEAR!";
 }
