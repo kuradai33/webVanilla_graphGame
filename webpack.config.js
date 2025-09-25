@@ -3,7 +3,7 @@ module.exports = {
         bundle: "./src/index.ts",
     },
     output: {
-        path: `${__dirname}/src/dist`,
+        path: `${__dirname}/Docs`,
         filename: "main.js",
     },
     mode: "development", // development or production
@@ -12,7 +12,7 @@ module.exports = {
     },
     devServer: {
         static: {
-            directory: `${__dirname}/src/dist`,
+            directory: `${__dirname}/Docs`,
         },
         open: true,
         hot: true,
