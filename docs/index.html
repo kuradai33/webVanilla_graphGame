@@ -1,17 +1,18 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 
-    <link rel="stylesheet" href="style.css">
+    <!-- Pico.css のCDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-    <h1>Graph to Plain!</h1>
-    <canvas id="game_screen"></canvas>
-
-    <p id="info"></p>
+    <button type="button" id="switch_mode">Light/Dark</button>
+    <!-- ページが書き込まれる -->
+    <div id="page"></div>
 
     <script src="main.js"></script>
 </body>
