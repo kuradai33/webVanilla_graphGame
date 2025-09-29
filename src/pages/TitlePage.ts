@@ -1,4 +1,3 @@
-import { PageLabel } from "../define";
 import Page from "./Page";
 
 export type TitleOutput = { cntNode: number };
@@ -17,7 +16,7 @@ export class Titlepage extends Page {
 
     changePage(): void {
         this.root.innerHTML = `
-<section id="screen-title" data-screen>
+<section class="screen-title" data-screen>
     <h1>Planarity Challenge</h1>
     <p>
         ランダムに生成された <strong>平面的グラフ</strong> を乱した配置から開始します。<br />

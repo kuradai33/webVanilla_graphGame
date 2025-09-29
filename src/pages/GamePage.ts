@@ -27,7 +27,7 @@ export class Gamepage extends Page {
 
     changePage(data: Input = { cntNode: 10 }): void {
         this.root.innerHTML = `
-            <section id="screen-game">
+            <section class="screen-game">
                 <h1>Graph to Plain!</h1>
                 <canvas id="game_screen"></canvas>
                 <p id="info"></p>

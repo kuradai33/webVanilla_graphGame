@@ -1,5 +1,4 @@
 import Page from "./Page";
-import { PageLabel } from "../define";
 
 
 type Input = { time: string; cntNode: number };
@@ -21,7 +20,7 @@ export class Resultpage extends Page {
 
     changePage(data: Input = { time: "--:--.--", cntNode: 10 }): void {
         this.root.innerHTML = `
-            <section id="screen-result">
+            <section class="screen-result">
                 <h2>結果</h2>
 
                 <!-- 概要カード -->
