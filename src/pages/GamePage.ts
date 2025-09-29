@@ -69,7 +69,7 @@ export class Gamepage extends Page {
 
         // 初期描画
         const opeg = new graph.Graph(ctx);
-        this.createPlanegraph(opeg, 5); // 平面グラフを作成
+        this.createPlanegraph(opeg, data.cntNode); // 平面グラフを作成
 
         opeg.updateEdgeColor(); // 辺の交差情報を更新
         opeg.loop(0); // 全ての要素を描画

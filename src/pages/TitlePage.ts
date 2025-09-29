@@ -29,7 +29,7 @@ export class Titlepage extends Page {
 
             <label for="vcount">
                 頂点数
-                <input id="vcount" type="number" min="6" max="60" value="18" required />
+                <input id="vcount" type="number" min="6" max="60" value="10" required />
             </label>
 
             <!-- <label for="edgeRatio">
