@@ -1,4 +1,3 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH, NODE_RADIUS } from "../define";
 import * as graph from "../graph";
 
 import Page from "./Page";
@@ -12,10 +11,30 @@ type Callback = (data: GameOutput) => void;
 
 export class Gamepage extends Page {
     protected callback?: Callback;
+    private ctx?: CanvasRenderingContext2D;
 
     cntNode: number = -1;
     gameScreen?: HTMLCanvasElement;
     textInfo?: HTMLElement;
+
+    animationFrameId: number = -1;
+    animationTime: number = -1;
+
+    private readonly animationFPS = 120;
+
+    private readonly canvasSize = {
+        height: 500,
+        width: 500,
+    };
+
+    private readonly bgColor = "#0b0f1a";
+
+    private readonly bgGridStyle = {
+        origin: { y: this.canvasSize.width / 2, x: this.canvasSize.height / 2 },
+        grid: { height: 80, width: 80 },
+        color: "#111829",
+        lineWidth: 1,
+    };
 
     constructor(root: HTMLElement) {
         super(root);
@@ -25,33 +44,118 @@ export class Gamepage extends Page {
         this.callback = callback;
     }
 
+    /**
+     * ページをゲームページに書き換える。
+     * @param {Input} data - ページ生成のために渡される情報
+     */
     changePage(data: Input = { cntNode: 10 }): void {
         this.root.innerHTML = `
             <section class="screen-game">
                 <h1>Graph to Plain!</h1>
-                <canvas id="game_screen"></canvas>
+                <canvas id="game_playground"></canvas>
                 <p id="info"></p>
             </section>`;
 
         this.cntNode = data.cntNode;
 
-        this.gameScreen = document.getElementById("game_screen") as HTMLCanvasElement;
+        this.gameScreen = document.getElementById("game_playground") as HTMLCanvasElement;
         this.textInfo = document.getElementById("info") as HTMLElement;
         // キャンバスの描画用オブジェクトを取得
         const ctx = this.gameScreen.getContext("2d")!;
+        this.ctx = ctx;
         // キャンバスの大きさを設定
-        this.gameScreen.height = CANVAS_HEIGHT;
-        this.gameScreen.width = CANVAS_WIDTH;
+        this.gameScreen.height = this.canvasSize.height;
+        this.gameScreen.width = this.canvasSize.width;
 
         // 初期描画
         const opeg = new graph.Graph(ctx);
         this.createPlanegraph(opeg, 5); // 平面グラフを作成
 
         opeg.updateEdgeColor(); // 辺の交差情報を更新
-        opeg.draw(); // 全ての要素を描画
+        opeg.loop(0); // 全ての要素を描画
 
         // キャンバスなどにマウスイベントを設定
         this.settingCanvasEvent(opeg);
+
+        // アニメーションを設定
+        const loop = (time: number) => {
+            const nextTime = time;
+            if(this.animationTime == -1) this.animationTime = nextTime;
+
+            if(nextTime - this.animationTime > 1000 / this.animationFPS) {
+                this.animationTime = nextTime;
+
+                // 再描画
+                ctx.clearRect(0, 0, this.canvasSize.height, this.canvasSize.width);
+                this.drawBackground();
+                opeg.loop(this.animationTime); // グラフを更新
+            }
+            requestAnimationFrame(loop);
+        };
+        this.animationFrameId = requestAnimationFrame(loop);
+    }
+
+    /**
+     * 背景を描画する。
+     */
+    private drawBackground() {
+        const { height, width } = this.canvasSize;
+        const { origin, grid, color, lineWidth } = this.bgGridStyle;
+        const ctx = this.ctx;
+        if(!ctx) throw new Error("Property is unsetted");
+
+        // 背景
+        ctx.fillStyle = this.bgColor;
+        ctx.fillRect(0, 0, width, height);
+
+        // グリッドの描画
+        // 縦線
+        for(let i = 0; origin.x + grid.width * i <= width; i++) {
+            this.drawVerticalLine(origin.x + grid.width * i, color, lineWidth, ctx);
+        }
+        for(let i = 1; origin.x - grid.width * i >= 0; i++) {
+            this.drawVerticalLine(origin.x - grid.width * i, color, lineWidth, ctx);
+        }
+
+        // 横線
+        for(let i = 0; origin.y + grid.height * i <= height; i++) {
+            this.drawHorizontalLine(origin.y + grid.height * i, color, lineWidth, ctx);
+        }
+        for(let i = 1; origin.y - grid.height * i >= 0; i++) {
+            this.drawHorizontalLine(origin.y - grid.height * i, color, lineWidth, ctx);
+        }
+    }
+
+    /**
+     * 縦線をキャンバスに描画する。
+     * @param {number} x - 縦線を引くx座標
+     * @param {string} color - 線の色
+     * @param {number} lineWidth - 線の幅
+     * @param {CanvasRenderingContext2D} ctx - 線の描画対象
+     */
+    private drawVerticalLine(x: number, color: string, lineWidth: number, ctx: CanvasRenderingContext2D) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, this.canvasSize.height);
+        ctx.stroke();
+    }
+
+    /**
+     * 横線をキャンバスに描画する。
+     * @param {number} y - 横線を引くy座標
+     * @param {string} color - 線の色
+     * @param {number} lineWidth - 線の幅
+     * @param {CanvasRenderingContext2D} ctx - 線の描画対象
+     */
+    private drawHorizontalLine(y: number, color: string, lineWidth: number, ctx: CanvasRenderingContext2D) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(this.canvasSize.width, y);
+        ctx.stroke();
     }
 
     /**
@@ -78,8 +182,7 @@ export class Gamepage extends Page {
             mouseStartY = y;
 
             operatedNode = opeg.getClosestNode(x, y);
-            operatedNode?.setFillColor("red");
-            operatedNode?.draw();
+            if(operatedNode) operatedNode.status = "drag";
             const pos = operatedNode?.getPos();
             if (pos != undefined) {
                 nodeStartX = pos[0];
@@ -95,17 +198,27 @@ export class Gamepage extends Page {
             const rect = this.gameScreen.getBoundingClientRect();
             const x: number = e.clientX - rect.left;
             const y: number = e.clientY - rect.top;
-            const processed_x = Math.min(Math.max(x - mouseStartX + nodeStartX, NODE_RADIUS), CANVAS_WIDTH - NODE_RADIUS);
-            const processed_y = Math.min(Math.max(y - mouseStartY + nodeStartY, NODE_RADIUS), CANVAS_HEIGHT - NODE_RADIUS);
+            const processed_x = Math.min(
+                Math.max(
+                    x - mouseStartX + nodeStartX,
+                    18
+                ),
+                this.canvasSize.width - 18
+            );
+            const processed_y = Math.min(
+                Math.max(
+                    y - mouseStartY + nodeStartY,
+                    18
+                ),
+                this.canvasSize.height - 18
+            );
 
             operatedNode?.setPos(processed_x, processed_y);
             opeg.updateEdgeColor();
-            opeg.draw();
         });
         this.root.addEventListener("mouseup", (e: MouseEvent) => {
             if (!isDragging) return;
-            operatedNode?.setFillColor("black");
-            operatedNode?.draw();
+            if(operatedNode) operatedNode.status = "normal";
             isDragging = false;
             if (!opeg.checkCrossedGraph()) {
                 this.finishGame(opeg);
@@ -118,7 +231,7 @@ export class Gamepage extends Page {
      * @param {graph.Graph} opeg グラフ操作オブジェクト
      * @param {number} cntNode 作成する頂点の数
      */
-    createPlanegraph(opeg: graph.Graph, cntNode: number) {
+    private createPlanegraph(opeg: graph.Graph, cntNode: number) {
         const ctx = opeg.getCtx();
 
         // 頂点を作成
@@ -151,7 +264,7 @@ export class Gamepage extends Page {
      * @param {number} cntNode 頂点数
      * @returns {[number, number][]} 有効な辺のリスト
      */
-    createPlanegraphEdges(cntNode: number): [number, number][] {
+    private createPlanegraphEdges(cntNode: number): [number, number][] {
         let edgesLeft: [number, number][] = [], edgesRight: [number, number][] = [];
         let cntFail = 0;
         while (cntFail < 1000) {
@@ -182,7 +295,7 @@ export class Gamepage extends Page {
      * @param {[number, number]} newEdge 新たに追加する辺
      * @returns {boolean} 交差が起こるかどうか
      */
-    checkCrossing(existedEdges: [number, number][], newEdge: [number, number]): boolean {
+    private checkCrossing(existedEdges: [number, number][], newEdge: [number, number]): boolean {
         for (const edge of existedEdges) {
             const inside = edge[0] <= newEdge[0] && newEdge[1] <= edge[1];
             const outside = newEdge[0] <= edge[0] && edge[1] <= newEdge[1];
@@ -199,7 +312,7 @@ export class Gamepage extends Page {
      * @param {number} end 範囲の終わり（含まない）
      * @returns ランダムな整数
      */
-    getRandint(start: number, end: number): number { // [start, end)
+    private getRandint(start: number, end: number): number { // [start, end)
         if (start > end) {
             const tmp = start;
             start = end;
@@ -212,9 +325,12 @@ export class Gamepage extends Page {
      * ゲーム終了時の処理を行う。
      * @param {graph.Graph} opeg グラフ操作オブジェクト
      */
-    finishGame(opeg: graph.Graph) {
+    private finishGame(opeg: graph.Graph) {
         // イベントリスナを削除
         controller.abort();
+
+        // アニメーションを停止
+        cancelAnimationFrame(this.animationFrameId);
 
         opeg.drawClearedGraph();
         // this.textInfo.innerText = "CLEAR!";
