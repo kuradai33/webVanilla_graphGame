@@ -1,4 +1,5 @@
 import * as define from "./define";
+import { SparkRenderer } from "./render/spark";
 
 /**
  * 図形の基本クラス。
@@ -6,7 +7,7 @@ import * as define from "./define";
  */
 class Shape {
     /** 図形の描画を行うメソッド（オーバーライド前提） */
-    public loop(time: number): void {};
+    public loop(time: number): void { };
 }
 
 type NodeStatus = "normal" | "hover" | "drag";
@@ -57,7 +58,7 @@ export class GraphNode extends Shape {
         this.id = id;
 
         // グロースプライトの作成
-        const { glowInner, glowOuter } = this.neonColor; 
+        const { glowInner, glowOuter } = this.neonColor;
         const { radius, glowRadius } = this.neonStyle;
 
         this.graphicGlow.height = 2 * glowRadius;
@@ -92,7 +93,7 @@ export class GraphNode extends Shape {
      * @returns {[number, number]} [x, y] 形式の座標
      */
     public getPos(): [number, number] { return [this.center_x, this.center_y] }
-    
+
     /**
      * 頂点の位置を設定する。
      * @param {number} x 新しいX座標
@@ -119,7 +120,7 @@ export class GraphNode extends Shape {
      */
     public loop(time: number) {
         // 直前にドラッグが終了した時刻を記録
-        if(this.prevStatus == "drag" && this.status == "normal") {
+        if (this.prevStatus == "drag" && this.status == "normal") {
             this.lastDragedTime = time;
         }
         this.prevStatus = this.status;
@@ -138,12 +139,12 @@ export class GraphNode extends Shape {
         // this.ctx.fillStyle = "white";
         // this.ctx.fill();
         // this.ctx.closePath();
-        
+
         const ctx = this.ctx;
         const cx = this.center_x, cy = this.center_y;
         const { core, ring } = this.neonColor;
         const { radius, ringWidth, glowRadius, pulse, pulsePeriodMS } = this.neonStyle;
-                    
+
         const pulseScale =
             pulse ?
                 1.0 + 0.1 * Math.cos(((time - this.lastDragedTime) / pulsePeriodMS) * Math.PI * 2) :
@@ -199,16 +200,12 @@ export class GraphEdge extends Shape {
     private node2: GraphNode;
     private ctx: CanvasRenderingContext2D;
 
-    private color: "black" | "red" | "yellow" = "black";
-
     public status: EdgeStatus = "normal";
 
-    private readonly neonStyle = {
+    private readonly normalStyle = {
         coreAlpha: 0.3,
         coreWidth: 1,
-        color: "#00e5ff",
         colorWidth: 3,
-        alertColor: "#ffb703",
         solvedBoost: 1.2,
         dash: {
             pattern: [7, 7],
@@ -217,11 +214,26 @@ export class GraphEdge extends Shape {
         bright: {
             span: 200,
             speed: 100,
-            colorBright: "#00eaffff",
-            colorDim: "#00333aff",
+            colorBright: "#40efffff",
+            colorDim: "#00262bff",
         },
-        cap: "square" as CanvasLineCap,
-        join: "round" as CanvasLineJoin,
+    };
+
+    private readonly alertStyle = {
+        coreAlpha: 0.3,
+        coreWidth: 1,
+        colorWidth: 3,
+        solvedBoost: 1.2,
+        dash: {
+            pattern: [7, 7],
+            speed: 0,
+        },
+        bright: {
+            span: 200,
+            speed: 0,
+            colorBright: "#926900ff",
+            colorDim: "#926900ff",
+        },
     };
 
     /**
@@ -236,12 +248,6 @@ export class GraphEdge extends Shape {
         this.node1 = n1;
         this.node2 = n2;
     }
-
-    /**
-     * 辺の色を設定する。
-     * @param {"black" | "red" | "yellow"} color 色（"black" または "red" または "yellow"）
-     */
-    setColor(c: "black" | "red" | "yellow") { this.color = c; }
 
     public loop(time: number) {
         this.draw(time);
@@ -270,38 +276,17 @@ export class GraphEdge extends Shape {
         const {
             coreAlpha,
             coreWidth,
-            color,
             colorWidth,
-            alertColor,
             solvedBoost,
             dash,
             bright,
-            cap,
-            join,
-        } = this.neonStyle;
+        } = this.status == "alert" ? this.alertStyle : this.normalStyle;
         const ctx = this.ctx;
-
-        const drawColor = this.status === "alert" ? alertColor : color;
-        const showSolvedBoost = this.status === "solved" ? solvedBoost : 1.0;
-
-        // 芯
-        ctx.save();
-        ctx.globalCompositeOperation = "source-over";
-        ctx.lineCap = cap;
-        ctx.lineJoin = join;
-        ctx.strokeStyle = `rgba(255,255,255,${coreAlpha})`;
-        ctx.lineWidth = coreWidth;
-        this.strokeLine(ctx, x1, y1, x2, y2);
-        ctx.restore();
-
 
         // カラー外層
         ctx.save();
         const ang = Math.atan2(y2 - y1, x2 - x1);
         ctx.globalCompositeOperation = "lighter";
-
-        ctx.lineCap = cap;
-        ctx.lineJoin = join;
 
         ctx.translate(x1, y1);
         ctx.rotate(ang);
@@ -312,19 +297,19 @@ export class GraphEdge extends Shape {
         // グラデーションの設定（0と1と最小、最大の部分に設定）
         const rawOffset = (time / 1000) * bright.speed;
         const brightOffset = rawOffset - Math.floor(rawOffset / bright.span) * bright.span; // 0 ~ spanに加工
-        for(let i = 0;; i++) {
-            if(bright.span / 2 * i - brightOffset > len) { // 終了判定
+        for (let i = 0; ; i++) {
+            if (bright.span / 2 * i - brightOffset > len) { // 終了判定
                 const maxi = i - 1;
                 const percentage = Math.round((1 - (bright.span / 2 * maxi - brightOffset) / len) / (bright.span / 2 / len) * 100);
-                if(maxi % 2 == 0) grad.addColorStop(1, `color-mix(in srgb, ${bright.colorBright} ${percentage}%, ${bright.colorDim})`);
+                if (maxi % 2 == 0) grad.addColorStop(1, `color-mix(in srgb, ${bright.colorBright} ${percentage}%, ${bright.colorDim})`);
                 else grad.addColorStop(1, `color-mix(in srgb, ${bright.colorDim} ${percentage}%, ${bright.colorBright})`);
                 break;
             }
 
-            if(bright.span / 2 * i - brightOffset < 0) {
-                if(0 <= bright.span / 2 * (i + 1) - brightOffset) {
+            if (bright.span / 2 * i - brightOffset < 0) {
+                if (0 <= bright.span / 2 * (i + 1) - brightOffset) {
                     const percentage = Math.round((-(bright.span / 2 * i - brightOffset) / len) / (bright.span / 2 / len) * 100);
-                    if(i % 2 == 0) grad.addColorStop(0, `color-mix(in srgb, ${bright.colorBright} ${percentage}%, ${bright.colorDim})`);
+                    if (i % 2 == 0) grad.addColorStop(0, `color-mix(in srgb, ${bright.colorBright} ${percentage}%, ${bright.colorDim})`);
                     else grad.addColorStop(0, `color-mix(in srgb, ${bright.colorDim} ${percentage}%, ${bright.colorBright})`);
                 }
                 continue;
@@ -346,8 +331,16 @@ export class GraphEdge extends Shape {
         ctx.save();
         ctx.strokeStyle = "#0b0f1a";
         ctx.lineWidth = colorWidth * solvedBoost * 1.2;
-        ctx.lineDashOffset = this.status === "solved" ? 0 : -(time / 1000) * dash.speed;
+        ctx.lineDashOffset = -(time / 1000) * dash.speed;
         ctx.setLineDash(dash.pattern);
+        this.strokeLine(ctx, x1, y1, x2, y2);
+        ctx.restore();
+
+        // 芯
+        ctx.save();
+        ctx.globalCompositeOperation = "source-over";
+        ctx.strokeStyle = `rgba(255,255,255,${coreAlpha})`;
+        ctx.lineWidth = coreWidth;
         this.strokeLine(ctx, x1, y1, x2, y2);
         ctx.restore();
     }
@@ -376,7 +369,7 @@ export class GraphEdge extends Shape {
      * @param {GraphEdge} edge - 判定する辺
      * @returns {{y: number; x: number} | null} - 交差点の座標またはnull
      */
-    checkCrossed(edge: GraphEdge): {y: number; x: number} | null {
+    checkCrossed(edge: GraphEdge): { y: number; x: number } | null {
         // 交差判定
         // https://qiita.com/zu_rin/items/e04fdec4e3dec6072104
         const [a1x, a1y] = this.node1.getPos();
@@ -397,7 +390,7 @@ export class GraphEdge extends Shape {
         const coefDeno = (a1y - a2y) * (b1x - b2x) - (a1x - a2x) * (b1y - b2y);
 
         const coef = coefNume / coefDeno;
-        
+
         return { y: coef * (a2y - a1y) + a1y, x: coef * (a2x - a1x) + a1x };
     }
 
@@ -416,6 +409,8 @@ export class Graph {
     private graphEdges: GraphEdge[] = [];
     private ctx: CanvasRenderingContext2D;
 
+    private readonly spackRenderer = new SparkRenderer();
+
     private readonly graphicGlow = document.createElement("canvas");
 
     /**
@@ -424,11 +419,12 @@ export class Graph {
      */
     constructor(ctx: CanvasRenderingContext2D) {
         this.ctx = ctx;
+        this.spackRenderer.ctx = ctx;
 
         const c = this.graphicGlow;
         c.width = c.height = 64;
         const g = c.getContext("2d")!;
-        const grad = g.createRadialGradient(32,32,0,32,32,24);
+        const grad = g.createRadialGradient(32, 32, 0, 32, 32, 24);
         grad.addColorStop(0, "rgba(255,255,255,1)");
         grad.addColorStop(1, "rgba(255,255,255,0)");
         g.fillStyle = grad;
@@ -458,19 +454,15 @@ export class Graph {
     }
 
     /**
-     * 辺の色を更新（交差に応じて赤色に）
+     * 辺の状態を更新。
      */
-    public updateEdgeColor(): boolean {
+    public updateEdgeStatus() {
         const crossed = this.checkCrossedEdges();
         const len = this.graphEdges.length;
 
-        let crossed_graph = false;
         for (let i = 0; i < len; i++) {
-            this.graphEdges[i].setColor(crossed[i] ? "red" : "black");
-            crossed_graph ||= crossed[i];
+            this.graphEdges[i].status = crossed[i] ? "alert" : "normal";
         }
-
-        return crossed_graph;
     }
 
     /**
@@ -503,9 +495,9 @@ export class Graph {
      * グラフ全体における座標を計算する。
      * @returns {{y: number; x: number}[]} - 交差点の座標
      */
-    private culEdgeIntersection(): {y: number; x: number}[] {
+    private culEdgeIntersection(): { y: number; x: number }[] {
         const len = this.graphEdges.length;
-        let crossedPoints: {y: number; x: number}[] = [];
+        let crossedPoints: { y: number; x: number }[] = [];
         for (let i = 0; i < len; i++) for (let j = i + 1; j < len; j++) {
             if (this.graphEdges[i].checkNeighbor(this.graphEdges[j])) continue;
             const intersect = this.graphEdges[i].checkCrossed(this.graphEdges[j]);
@@ -519,6 +511,7 @@ export class Graph {
      * @param {number} time - 経過時間(ms)
      */
     public loop(time: number) {
+        this.updateEdgeStatus();
         for (const e of this.graphEdges) e.loop(time);
 
         for (const n of this.graphNodes) n.loop(time);
@@ -533,12 +526,15 @@ export class Graph {
     private drawSpark(time: number) {
         // TODO: 未完成
         const crossedPoints = this.culEdgeIntersection();
-        console.log(crossedPoints);
-        for(const point of crossedPoints) {
+        for (const point of crossedPoints) {
             const { x, y } = point;
-            const r = 10;
-            this.ctx.drawImage(this.graphicGlow, x - r, y - r, r * 2, r * 2);
+            // const r = 10;
+            // this.ctx.drawImage(this.graphicGlow, x - r, y - r, r * 2, r * 2);
+            this.spackRenderer.emit(x, y);
         }
+
+        this.spackRenderer.update(time / 1000);
+        this.spackRenderer.draw();
     }
 
     /**
@@ -565,7 +561,6 @@ export class Graph {
      * グラフクリア時の描画処理を行う。
      */
     public drawClearedGraph() {
-        for (const edge of this.graphEdges) edge.setColor("yellow");
         console.log("fin");
     }
 };
