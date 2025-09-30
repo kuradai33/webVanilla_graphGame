@@ -20,7 +20,7 @@ export class Gamepage extends Page {
     animationFrameId: number = -1;
     animationTime: number = -1;
 
-    private readonly animationFPS = 120;
+    private readonly animationFPS = 60;
 
     private readonly canvasSize = {
         height: 500,
@@ -71,7 +71,6 @@ export class Gamepage extends Page {
         const opeg = new graph.Graph(ctx);
         this.createPlanegraph(opeg, data.cntNode); // 平面グラフを作成
 
-        opeg.updateEdgeColor(); // 辺の交差情報を更新
         opeg.loop(0); // 全ての要素を描画
 
         // キャンバスなどにマウスイベントを設定
@@ -80,9 +79,9 @@ export class Gamepage extends Page {
         // アニメーションを設定
         const loop = (time: number) => {
             const nextTime = time;
-            if(this.animationTime == -1) this.animationTime = nextTime;
+            if (this.animationTime == -1) this.animationTime = nextTime;
 
-            if(nextTime - this.animationTime > 1000 / this.animationFPS) {
+            if (nextTime - this.animationTime > 1000 / this.animationFPS) {
                 this.animationTime = nextTime;
 
                 // 再描画
@@ -102,7 +101,7 @@ export class Gamepage extends Page {
         const { height, width } = this.canvasSize;
         const { origin, grid, color, lineWidth } = this.bgGridStyle;
         const ctx = this.ctx;
-        if(!ctx) throw new Error("Property is unsetted");
+        if (!ctx) throw new Error("Property is unsetted");
 
         // 背景
         ctx.fillStyle = this.bgColor;
@@ -110,18 +109,18 @@ export class Gamepage extends Page {
 
         // グリッドの描画
         // 縦線
-        for(let i = 0; origin.x + grid.width * i <= width; i++) {
+        for (let i = 0; origin.x + grid.width * i <= width; i++) {
             this.drawVerticalLine(origin.x + grid.width * i, color, lineWidth, ctx);
         }
-        for(let i = 1; origin.x - grid.width * i >= 0; i++) {
+        for (let i = 1; origin.x - grid.width * i >= 0; i++) {
             this.drawVerticalLine(origin.x - grid.width * i, color, lineWidth, ctx);
         }
 
         // 横線
-        for(let i = 0; origin.y + grid.height * i <= height; i++) {
+        for (let i = 0; origin.y + grid.height * i <= height; i++) {
             this.drawHorizontalLine(origin.y + grid.height * i, color, lineWidth, ctx);
         }
-        for(let i = 1; origin.y - grid.height * i >= 0; i++) {
+        for (let i = 1; origin.y - grid.height * i >= 0; i++) {
             this.drawHorizontalLine(origin.y - grid.height * i, color, lineWidth, ctx);
         }
     }
@@ -164,7 +163,7 @@ export class Gamepage extends Page {
      * @param {graph.Graph} opeg グラフ操作オブジェクト
      */
     private settingCanvasEvent(opeg: graph.Graph) {
-        if(!this.gameScreen) throw new Error("Property is unsetted");
+        if (!this.gameScreen) throw new Error("Property is unsetted");
 
         let isDragging = false;
         let mouseStartX: number = 0, mouseStartY: number = 0;
@@ -172,7 +171,7 @@ export class Gamepage extends Page {
         let operatedNode: graph.GraphNode | null = null;
 
         this.gameScreen.addEventListener("mousedown", (e: MouseEvent) => {
-            if(!this.gameScreen) throw new Error("Property is unsetted");
+            if (!this.gameScreen) throw new Error("Property is unsetted");
 
             const rect = this.gameScreen.getBoundingClientRect();
             const x: number = e.clientX - rect.left;
@@ -182,7 +181,7 @@ export class Gamepage extends Page {
             mouseStartY = y;
 
             operatedNode = opeg.getClosestNode(x, y);
-            if(operatedNode) operatedNode.status = "drag";
+            if (operatedNode) operatedNode.status = "drag";
             const pos = operatedNode?.getPos();
             if (pos != undefined) {
                 nodeStartX = pos[0];
@@ -193,7 +192,7 @@ export class Gamepage extends Page {
         }, { signal: signal });
         this.root.addEventListener("mousemove", (e: MouseEvent) => {
             if (!isDragging) return;
-            if(!this.gameScreen) throw new Error("Property is unsetted");
+            if (!this.gameScreen) throw new Error("Property is unsetted");
 
             const rect = this.gameScreen.getBoundingClientRect();
             const x: number = e.clientX - rect.left;
@@ -214,11 +213,10 @@ export class Gamepage extends Page {
             );
 
             operatedNode?.setPos(processed_x, processed_y);
-            opeg.updateEdgeColor();
         });
         this.root.addEventListener("mouseup", (e: MouseEvent) => {
             if (!isDragging) return;
-            if(operatedNode) operatedNode.status = "normal";
+            if (operatedNode) operatedNode.status = "normal";
             isDragging = false;
             if (!opeg.checkCrossedGraph()) {
                 this.finishGame(opeg);
@@ -256,7 +254,7 @@ export class Gamepage extends Page {
             opeg.addGraphElement(new graph.GraphEdge(ctx, nodes[edge[0]], nodes[edge[1]]));
         }
 
-        if(this.textInfo) this.textInfo.innerText = `node:${CNT_NODE} edge:${edges.length}`;
+        if (this.textInfo) this.textInfo.innerText = `node:${CNT_NODE} edge:${edges.length}`;
     }
 
     /**
