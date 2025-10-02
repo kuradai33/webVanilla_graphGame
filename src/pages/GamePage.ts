@@ -61,6 +61,7 @@ export class Gamepage extends Page {
                 <h1>Graph to Plain!</h1>
                 <canvas id="game_playground"></canvas>
                 <p id="info"></p>
+                <button id="btn"></button>
             </section>`;
 
         this.cntNode = data.cntNode;
@@ -91,6 +92,10 @@ export class Gamepage extends Page {
         this.settingCanvasEvent(opeg);
 
         this.startTime = performance.now(); // スタート時刻を記録
+
+        document.getElementById("btn")?.addEventListener("click", () => {
+            if(this.callback) this.callback({time: "", cntNode: 10});
+        });
 
         // アニメーションを設定
         const loop = (time: number) => {
