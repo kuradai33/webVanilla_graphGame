@@ -513,10 +513,10 @@ export class Graph {
     public loop(time: number) {
         this.updateEdgeStatus();
         for (const e of this.graphEdges) e.loop(time);
+        
+        this.drawSpark(time);
 
         for (const n of this.graphNodes) n.loop(time);
-
-        this.drawSpark(time);
     }
 
     /**
