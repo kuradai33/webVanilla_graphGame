@@ -1,3 +1,8 @@
+@font-face {
+    font-family: 'Quadaptor'; /* 使用したいフォント名 */
+    src: url('./Quadaptor.otf') format('opentype'); /* OTFファイルへのパス */
+}
+
 canvas {
     border: 2px solid #000; /* 黒の2px実線 */
     /* border-radius: 8px;      角を少し丸める（オプション） */
