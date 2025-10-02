@@ -22,7 +22,12 @@ module.exports = {
             {
                 test: /\.ts$/,
                 loader: "ts-loader",
-            }
+            },
+            {
+                test: /\.(woff2?|otf|ttf)$/i,
+                type: "asset/resource",
+                generator: { filename: "[name][ext]" }
+            },
         ],
     }
 };
