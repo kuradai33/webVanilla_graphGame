@@ -1,4 +1,5 @@
 import * as graph from "../graph";
+import { NeonStopwatch } from "../render/NeonStopwatch";
 
 import Page from "./Page";
 
@@ -19,6 +20,12 @@ export class Gamepage extends Page {
 
     animationFrameId: number = -1;
     animationTime: number = -1;
+
+    startTime: number = -1;
+
+    stopwatch?: NeonStopwatch;
+
+    private events: [HTMLElement, keyof HTMLElementEventMap, any, boolean | AddEventListenerOptions | null][] = [];
 
     private readonly animationFPS = 60;
 
@@ -60,12 +67,19 @@ export class Gamepage extends Page {
 
         this.gameScreen = document.getElementById("game_playground") as HTMLCanvasElement;
         this.textInfo = document.getElementById("info") as HTMLElement;
+
+        this.events = [];
         // キャンバスの描画用オブジェクトを取得
         const ctx = this.gameScreen.getContext("2d")!;
         this.ctx = ctx;
         // キャンバスの大きさを設定
-        this.gameScreen.height = this.canvasSize.height;
-        this.gameScreen.width = this.canvasSize.width;
+        const { height, width } = this.canvasSize;
+        this.gameScreen.height = height;
+        this.gameScreen.width = width;
+
+        // ストップウォッチの設定
+        const hudW = 180, hudH = 48, pad = 10;
+        this.stopwatch = new NeonStopwatch(ctx, width - hudW - pad, height - hudH - pad, hudW, hudH);
 
         // 初期描画
         const opeg = new graph.Graph(ctx);
@@ -75,6 +89,8 @@ export class Gamepage extends Page {
 
         // キャンバスなどにマウスイベントを設定
         this.settingCanvasEvent(opeg);
+
+        this.startTime = performance.now(); // スタート時刻を記録
 
         // アニメーションを設定
         const loop = (time: number) => {
@@ -86,10 +102,12 @@ export class Gamepage extends Page {
 
                 // 再描画
                 ctx.clearRect(0, 0, this.canvasSize.height, this.canvasSize.width);
-                this.drawBackground();
-                opeg.loop(this.animationTime); // グラフを更新
+                this.drawBackground(); // 背景を描画
+                opeg.loop(this.animationTime); // グラフを更新して描画
+
+                this.stopwatch?.draw(time - this.startTime);
             }
-            requestAnimationFrame(loop);
+            this.animationFrameId = requestAnimationFrame(loop);
         };
         this.animationFrameId = requestAnimationFrame(loop);
     }
@@ -170,7 +188,7 @@ export class Gamepage extends Page {
         let nodeStartX: number = 0, nodeStartY: number = 0;
         let operatedNode: graph.GraphNode | null = null;
 
-        this.gameScreen.addEventListener("mousedown", (e: MouseEvent) => {
+        const eventMousedown = (e: MouseEvent) => {
             if (!this.gameScreen) throw new Error("Property is unsetted");
 
             const rect = this.gameScreen.getBoundingClientRect();
@@ -189,8 +207,10 @@ export class Gamepage extends Page {
             }
 
             isDragging = true;
-        }, { signal: signal });
-        this.root.addEventListener("mousemove", (e: MouseEvent) => {
+        };
+        this.setEvent(this.gameScreen, "mousedown", eventMousedown, { signal: signal });
+
+        const eventMousemove = (e: MouseEvent) => {
             if (!isDragging) return;
             if (!this.gameScreen) throw new Error("Property is unsetted");
 
@@ -213,15 +233,34 @@ export class Gamepage extends Page {
             );
 
             operatedNode?.setPos(processed_x, processed_y);
-        });
-        this.root.addEventListener("mouseup", (e: MouseEvent) => {
+        };
+        this.setEvent(this.root, "mousemove", eventMousemove);
+
+        const eventMouseup = (e: MouseEvent) => {
             if (!isDragging) return;
             if (operatedNode) operatedNode.status = "normal";
             isDragging = false;
             if (!opeg.checkCrossedGraph()) {
                 this.finishGame(opeg);
             }
-        });
+        };
+        this.setEvent(this.root, "mouseup", eventMouseup);
+    }
+
+    private setEvent<K extends keyof HTMLElementEventMap>(
+        domElement: HTMLElement,
+        event: K,
+        func: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any,
+        options?: boolean | AddEventListenerOptions
+    ) {
+        if(options) {
+            domElement.addEventListener(event, func, options);
+            this.events.push([domElement, event, func, options]);
+        }
+        else {
+            domElement.addEventListener(event, func);
+            this.events.push([domElement, event, func, null]);
+        }
     }
 
     /**
@@ -331,9 +370,13 @@ export class Gamepage extends Page {
         cancelAnimationFrame(this.animationFrameId);
 
         opeg.drawClearedGraph();
-        // this.textInfo.innerText = "CLEAR!";
 
-        if (this.callback) this.callback({ time: "3:00.00", cntNode: this.cntNode });
-        else throw new Error("Property is unsetted");
+        for (const eventInfo of this.events) {
+            if(eventInfo[3]) eventInfo[0].removeEventListener(eventInfo[1], eventInfo[2], eventInfo[3]);
+            else eventInfo[0].removeEventListener(eventInfo[1], eventInfo[2]);
+        }
+
+        // if (this.callback) this.callback({ time: "3:00.00", cntNode: this.cntNode });
+        // else throw new Error("Property is unsetted");
     }
 }
