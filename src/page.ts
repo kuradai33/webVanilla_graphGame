@@ -15,22 +15,22 @@ export default class PageManager {
         const resultPage = new Resultpage(root);
 
         // 各ページの遷移用コールバック関数の登録
-        titlePage.setCallback((data: TitleOutput) => {
-            gamePage.changePage(data);
-        });
-        gamePage.setCallback((data: GameOutput) => {
-            resultPage.changePage(data);
-        });
-        resultPage.setCallback((arg: ResultOutput) => {
+        titlePage.callback = (data: TitleOutput) => {
+            gamePage.display(data);
+        };
+        gamePage.callback = (data: GameOutput) => {
+            resultPage.display(data);
+        };
+        resultPage.callback = (arg: ResultOutput) => {
             switch (arg.page) {
                 case "title":
-                    titlePage.changePage();
+                    titlePage.display();
                     break;
                 case "game":
-                    gamePage.changePage(arg.data);
+                    gamePage.display(arg.data);
                     break;
             }
-        });
+        };
 
         this._pages = {
             title: titlePage,
@@ -38,6 +38,6 @@ export default class PageManager {
             result: resultPage,
         };
 
-        this._pages[initPage].changePage();
+        this._pages[initPage].display();
     }
 };
