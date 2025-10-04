@@ -6,19 +6,27 @@ type Input = { time: string; cntNode: number };
 export type ResultOutput = { page: "title" } | { page: "game", data: { cntNode: number } };
 type Callback = (data: ResultOutput) => void;
 
+/**
+ * 結果画面を表示する。
+ */
 export class Resultpage extends Page {
-    cntNode: number = -1;
-    protected callback?: Callback;
+    protected _callback?: Callback;
+
+    /**
+     * グラフの頂点数。
+     * 前ページからのデータを保持するために使用する。
+     */
+    private cntNode: number = -1;
 
     constructor(root: HTMLElement) {
         super(root);
     }
 
-    setCallback(callback: Callback): void {
-        this.callback = callback;
+    set callback(callback: Callback) {
+        this._callback = callback;
     }
 
-    changePage(data: Input = { time: "--:--.--", cntNode: 10 }): void {
+    display(data: Input = { time: "--:--.--", cntNode: 10 }): void {
         this.root.innerHTML = `
             <section class="screen-result">
                 <h2>結果</h2>
@@ -52,9 +60,10 @@ export class Resultpage extends Page {
 
         this.cntNode = data.cntNode; // リトライ時の頂点数保持用
 
+        // 「もう一度」ボタンにイベントを登録
         const actionRetry = () => {
-            if (this.callback) {
-                this.callback({
+            if (this._callback) {
+                this._callback({
                     page: "game",
                     data: {
                         cntNode: this.cntNode,
@@ -66,8 +75,9 @@ export class Resultpage extends Page {
         const btnRetry = document.getElementById("btn_retry") as HTMLButtonElement;
         btnRetry.addEventListener("click", actionRetry);
 
+        // 「タイトルへ」ボタンにイベントを登録
         const actionBackTitle = () => {
-            if (this.callback) this.callback({ page: "title" });
+            if (this._callback) this._callback({ page: "title" });
             else throw new Error("Property is unsetted");
         };
         const btnBackTitle = document.getElementById("btn_backtitle") as HTMLButtonElement;

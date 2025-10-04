@@ -7,39 +7,94 @@ type Input = { cntNode: number };
 export type GameOutput = { time: string; cntNode: number };
 type Callback = (data: GameOutput) => void;
 
+/**
+ * ゲーム画面を表示する。
+ */
 export class Gamepage extends Page {
-    protected callback?: Callback;
+    protected _callback?: Callback;
+    
+    /**
+     * ゲーム画面描画用キャンバス
+     */
+    private gameScreen?: HTMLCanvasElement;
     private ctx?: CanvasRenderingContext2D;
 
-    cntNode: number = -1;
-    gameScreen?: HTMLCanvasElement;
-    textInfo?: HTMLElement;
+    /**
+     * デバッグ用テキスト要素
+     */
+    private textInfo?: HTMLElement;
 
-    animationFrameId: number = -1;
-    animationTime: number = -1;
+    /**
+     * アニメーション開始時刻
+     */
+    private animationStartTime: number = -1;
+    /**
+     * アニメーション現在時刻
+     */
+    private animationCurTime: number = -1;
+    /**
+     * 現在のアニメーションのid。
+     * requestAnimationFrame関数によって返される。
+     */
+    private animationFrameId: number = -1;
 
-    startTime: number = -1;
+    /**
+     * グラフの頂点数。
+     * 前ページからのデータを保持するために使用する。
+     */
+    private cntNode: number = -1;
 
+    /**
+     * ストップウォッチを画面に描画する
+     */
     stopwatch?: NeonStopwatch;
 
     controller: AbortController;
     signal: AbortSignal;
 
+    /**
+     * HTML要素に登録されたイベントのリスト。
+     * ページ遷移時のイベント削除用。
+     */
     private events: [HTMLElement, keyof HTMLElementEventMap, any, boolean | AddEventListenerOptions | null][] = [];
 
+    /* これ以降は定数 */
+    /**
+     * アニメーションのフレームレート
+     */
     private readonly animationFPS = 60;
 
+    /**
+     * ゲーム画面描画用のキャンバスのサイズ
+     */
     private readonly canvasSize = {
         height: 500,
         width: 500,
     };
 
+    /**
+     * ゲーム画面背景の色
+     */
     private readonly bgColor = "#0b0f1a";
-
+    /**
+     * ゲーム画面背景のグリッドのスタイル
+     */
     private readonly bgGridStyle = {
-        origin: { y: this.canvasSize.width / 2, x: this.canvasSize.height / 2 },
+        /**
+         * グリッドの原点座標
+         */
+        origin: { y: this.canvasSize.height / 2, x: this.canvasSize.width / 2 },
+        /**
+         * グリッドのサイズ
+         */
         grid: { height: 80, width: 80 },
+        /**
+         * グリッドの線の色
+         */
         color: "#111829",
+        /**
+         * グリッドの線の幅
+         */
         lineWidth: 1,
     };
 
@@ -49,15 +104,15 @@ export class Gamepage extends Page {
         this.signal = this.controller.signal;
     }
 
-    setCallback(callback: Callback): void {
-        this.callback = callback;
+    set callback(callback: Callback) {
+        this._callback = callback;
     }
 
     /**
      * ページをゲームページに書き換える。
-     * @param {Input} data - ページ生成のために渡される情報
+     * @param data - ページ生成のために渡される情報
      */
-    changePage(data: Input = { cntNode: 10 }): void {
+    display(data: Input = { cntNode: 10 }): void {
         this.root.innerHTML = `
             <section class="screen-game">
                 <h1>Graph to Plain!</h1>
@@ -95,22 +150,22 @@ export class Gamepage extends Page {
         // キャンバスなどにマウスイベントを設定
         this.settingCanvasEvent(opeg);
 
-        this.startTime = performance.now(); // スタート時刻を記録
+        this.animationStartTime = performance.now(); // スタート時刻を記録
 
         // アニメーションを設定
         const loop = (time: number) => {
             const nextTime = time;
-            if (this.animationTime == -1) this.animationTime = nextTime;
+            if (this.animationCurTime == -1) this.animationCurTime = nextTime;
 
-            if (nextTime - this.animationTime > 1000 / this.animationFPS) {
-                this.animationTime = nextTime;
+            if (nextTime - this.animationCurTime > 1000 / this.animationFPS) {
+                this.animationCurTime = nextTime;
 
                 // 再描画
                 ctx.clearRect(0, 0, this.canvasSize.height, this.canvasSize.width);
                 this.drawBackground(); // 背景を描画
-                opeg.loop(this.animationTime); // グラフを更新して描画
+                opeg.loop(this.animationCurTime); // グラフを更新して描画
 
-                this.stopwatch?.draw(time - this.startTime);
+                this.stopwatch?.draw(time - this.animationStartTime);
             }
             this.animationFrameId = requestAnimationFrame(loop);
         };
@@ -150,10 +205,10 @@ export class Gamepage extends Page {
 
     /**
      * 縦線をキャンバスに描画する。
-     * @param {number} x - 縦線を引くx座標
-     * @param {string} color - 線の色
-     * @param {number} lineWidth - 線の幅
-     * @param {CanvasRenderingContext2D} ctx - 線の描画対象
+     * @param x - 縦線を引くx座標
+     * @param color - 線の色
+     * @param lineWidth - 線の幅
+     * @param ctx - 線の描画対象
      */
     private drawVerticalLine(x: number, color: string, lineWidth: number, ctx: CanvasRenderingContext2D) {
         ctx.strokeStyle = color;
@@ -166,10 +221,10 @@ export class Gamepage extends Page {
 
     /**
      * 横線をキャンバスに描画する。
-     * @param {number} y - 横線を引くy座標
-     * @param {string} color - 線の色
-     * @param {number} lineWidth - 線の幅
-     * @param {CanvasRenderingContext2D} ctx - 線の描画対象
+     * @param y - 横線を引くy座標
+     * @param color - 線の色
+     * @param lineWidth - 線の幅
+     * @param ctx - 線の描画対象
      */
     private drawHorizontalLine(y: number, color: string, lineWidth: number, ctx: CanvasRenderingContext2D) {
         ctx.strokeStyle = color;
@@ -183,7 +238,7 @@ export class Gamepage extends Page {
     /**
      * キャンバス上のマウス操作イベントを設定する。
      * 頂点の選択やドラッグによる移動などを制御する。
-     * @param {graph.Graph} opeg グラフ操作オブジェクト
+     * @param opeg - グラフ操作オブジェクト
      */
     private settingCanvasEvent(opeg: graph.Graph) {
         if (!this.gameScreen) throw new Error("Property is unsetted");
@@ -252,13 +307,20 @@ export class Gamepage extends Page {
         this.setEvent(this.root, "mouseup", eventMouseup);
     }
 
+    /**
+     * HTML要素にイベントを登録し、その情報をリストに追加する。
+     * @param domElement - 登録先のHTML要素
+     * @param event - 登録するイベント名
+     * @param func - 登録する処理
+     * @param options - 登録するイベントについてのオプション
+     */
     private setEvent<K extends keyof HTMLElementEventMap>(
         domElement: HTMLElement,
         event: K,
         func: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any,
         options?: boolean | AddEventListenerOptions
     ) {
-        if(options) {
+        if (options) {
             domElement.addEventListener(event, func, options);
             this.events.push([domElement, event, func, options]);
         }
@@ -270,8 +332,8 @@ export class Gamepage extends Page {
 
     /**
      * 平面グラフを構成する頂点と辺を作成する。
-     * @param {graph.Graph} opeg グラフ操作オブジェクト
-     * @param {number} cntNode 作成する頂点の数
+     * @param opeg - グラフ操作オブジェクト
+     * @param cntNode - 作成する頂点の数
      */
     private createPlanegraph(opeg: graph.Graph, cntNode: number) {
         const ctx = opeg.getCtx();
@@ -303,8 +365,8 @@ export class Gamepage extends Page {
 
     /**
      * 平面グラフの辺をランダムに生成する。
-     * @param {number} cntNode 頂点数
-     * @returns {[number, number][]} 有効な辺のリスト
+     * @param cntNode - 頂点数
+     * @returns 有効な辺のリスト
      */
     private createPlanegraphEdges(cntNode: number): [number, number][] {
         let edgesLeft: [number, number][] = [], edgesRight: [number, number][] = [];
@@ -333,9 +395,9 @@ export class Gamepage extends Page {
 
     /**
      * 新たな辺を追加したときの交差判定を行う。
-     * @param {[number, number][]} existedEdges 既存の辺集合
-     * @param {[number, number]} newEdge 新たに追加する辺
-     * @returns {boolean} 交差が起こるかどうか
+     * @param existedEdges - 既存の辺集合
+     * @param newEdge - 新たに追加する辺
+     * @returns 交差が起こるかどうか
      */
     private checkCrossing(existedEdges: [number, number][], newEdge: [number, number]): boolean {
         for (const edge of existedEdges) {
@@ -350,8 +412,8 @@ export class Gamepage extends Page {
     /**
      * 指定した範囲の整数をランダムに生成する。
      * [start, end)の範囲。
-     * @param {number} start 範囲の始まり（含む）
-     * @param {number} end 範囲の終わり（含まない）
+     * @param start - 範囲の始まり（含む）
+     * @param end - 範囲の終わり（含まない）
      * @returns ランダムな整数
      */
     private getRandint(start: number, end: number): number { // [start, end)
@@ -365,7 +427,7 @@ export class Gamepage extends Page {
 
     /**
      * ゲーム終了時の処理を行う。
-     * @param {graph.Graph} opeg グラフ操作オブジェクト
+     * @param opeg - グラフ操作オブジェクト
      */
     private finishGame(opeg: graph.Graph) {
         // イベントリスナを削除
@@ -377,11 +439,11 @@ export class Gamepage extends Page {
         opeg.drawClearedGraph();
 
         for (const eventInfo of this.events) {
-            if(eventInfo[3]) eventInfo[0].removeEventListener(eventInfo[1], eventInfo[2], eventInfo[3]);
+            if (eventInfo[3]) eventInfo[0].removeEventListener(eventInfo[1], eventInfo[2], eventInfo[3]);
             else eventInfo[0].removeEventListener(eventInfo[1], eventInfo[2]);
         }
 
-        if (this.callback) this.callback({ time: "3:00.00", cntNode: this.cntNode });
+        if (this._callback) this._callback({ time: "3:00.00", cntNode: this.cntNode });
         else throw new Error("Property is unsetted");
     }
 }

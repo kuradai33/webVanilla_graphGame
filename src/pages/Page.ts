@@ -1,11 +1,25 @@
 import { PageLabel } from "../define";
 
+/**
+ * 画面の表示を行う抽象クラス
+ */
 export default abstract class Page {
-    protected callback?: (data?: any, page?: PageLabel) => void;
+    /**
+     * 次のページに遷移するためのコールバック関数
+     */
+    protected _callback?: (data?: any, page?: PageLabel) => void;
 
+    /**
+     * コンストラクタ
+     * @param root - ページを描画するルートとなるHTML要素
+     */
     constructor(protected root: HTMLElement) { }
 
-    abstract setCallback(callback: any): void;
+    abstract set callback(callback: any);
 
-    abstract changePage(data?: any): void;
+    /**
+     * ページの表示を行う。
+     * @param data - ページを表示するためのデータ
+     */
+    abstract display(data?: any): void;
 }
