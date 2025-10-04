@@ -3,9 +3,6 @@ import { NeonStopwatch } from "../render/NeonStopwatch";
 
 import Page from "./Page";
 
-const controller = new AbortController();
-const signal = controller.signal;
-
 type Input = { cntNode: number };
 export type GameOutput = { time: string; cntNode: number };
 type Callback = (data: GameOutput) => void;
@@ -24,6 +21,9 @@ export class Gamepage extends Page {
     startTime: number = -1;
 
     stopwatch?: NeonStopwatch;
+
+    controller: AbortController;
+    signal: AbortSignal;
 
     private events: [HTMLElement, keyof HTMLElementEventMap, any, boolean | AddEventListenerOptions | null][] = [];
 
@@ -45,6 +45,8 @@ export class Gamepage extends Page {
 
     constructor(root: HTMLElement) {
         super(root);
+        this.controller = new AbortController();
+        this.signal = this.controller.signal;
     }
 
     setCallback(callback: Callback): void {
@@ -67,6 +69,9 @@ export class Gamepage extends Page {
 
         this.gameScreen = document.getElementById("game_playground") as HTMLCanvasElement;
         this.textInfo = document.getElementById("info") as HTMLElement;
+
+        this.controller = new AbortController();
+        this.signal = this.controller.signal;
 
         this.events = [];
         // キャンバスの描画用オブジェクトを取得
@@ -208,7 +213,7 @@ export class Gamepage extends Page {
 
             isDragging = true;
         };
-        this.setEvent(this.gameScreen, "mousedown", eventMousedown, { signal: signal });
+        this.setEvent(this.gameScreen, "mousedown", eventMousedown, { signal: this.signal });
 
         const eventMousemove = (e: MouseEvent) => {
             if (!isDragging) return;
@@ -364,7 +369,7 @@ export class Gamepage extends Page {
      */
     private finishGame(opeg: graph.Graph) {
         // イベントリスナを削除
-        controller.abort();
+        this.controller.abort();
 
         // アニメーションを停止
         cancelAnimationFrame(this.animationFrameId);
@@ -376,7 +381,7 @@ export class Gamepage extends Page {
             else eventInfo[0].removeEventListener(eventInfo[1], eventInfo[2]);
         }
 
-        // if (this.callback) this.callback({ time: "3:00.00", cntNode: this.cntNode });
-        // else throw new Error("Property is unsetted");
+        if (this.callback) this.callback({ time: "3:00.00", cntNode: this.cntNode });
+        else throw new Error("Property is unsetted");
     }
 }
