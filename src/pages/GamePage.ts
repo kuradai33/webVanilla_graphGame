@@ -1,18 +1,17 @@
+import { manager } from "../index";
 import * as graph from "../graph";
 import { NeonStopwatch } from "../render/NeonStopwatch";
 
+import LeftRightGen from "../graph/LeftRightGen";
+
 import Page from "./Page";
 
-type Input = { cntNode: number };
-export type GameOutput = { time: string; cntNode: number };
-type Callback = (data: GameOutput) => void;
+type PlaneGraphGenAlgo = "LeftRight";
 
 /**
  * ゲーム画面を表示する。
  */
-export class Gamepage extends Page {
-    protected _callback?: Callback;
-    
+export default class Gamepage extends Page {
     /**
      * ゲーム画面描画用キャンバス
      */
@@ -37,12 +36,6 @@ export class Gamepage extends Page {
      * requestAnimationFrame関数によって返される。
      */
     private animationFrameId: number = -1;
-
-    /**
-     * グラフの頂点数。
-     * 前ページからのデータを保持するために使用する。
-     */
-    private cntNode: number = -1;
 
     /**
      * ストップウォッチを画面に描画する
@@ -104,23 +97,17 @@ export class Gamepage extends Page {
         this.signal = this.controller.signal;
     }
 
-    set callback(callback: Callback) {
-        this._callback = callback;
-    }
-
     /**
      * ページをゲームページに書き換える。
      * @param data - ページ生成のために渡される情報
      */
-    display(data: Input = { cntNode: 10 }): void {
+    override display(): void {
         this.root.innerHTML = `
             <section class="screen-game">
                 <h1>Graph to Plain!</h1>
                 <canvas id="game_playground"></canvas>
                 <p id="info"></p>
             </section>`;
-
-        this.cntNode = data.cntNode;
 
         this.gameScreen = document.getElementById("game_playground") as HTMLCanvasElement;
         this.textInfo = document.getElementById("info") as HTMLElement;
@@ -142,8 +129,8 @@ export class Gamepage extends Page {
         this.stopwatch = new NeonStopwatch(ctx, width - hudW - pad, height - hudH - pad, hudW, hudH);
 
         // 初期描画
-        const opeg = new graph.Graph(ctx);
-        this.createPlanegraph(opeg, data.cntNode); // 平面グラフを作成
+        const cntNode = manager.state.settings.cntNode;
+        const opeg = this.createPlaneGraph("LeftRight", ctx, cntNode); // 平面グラフを作成
 
         opeg.loop(0); // 全ての要素を描画
 
@@ -170,6 +157,21 @@ export class Gamepage extends Page {
             this.animationFrameId = requestAnimationFrame(loop);
         };
         this.animationFrameId = requestAnimationFrame(loop);
+    }
+
+    /**
+     * 指定されたアルゴリズムを使用してグラフを作成する。
+     * @param algo - 使用するアルゴリズム
+     * @param ctx - グラフの描画先
+     * @param cntNode - グラフの頂点数
+     * @returns 作成されたグラフ
+     */
+    private createPlaneGraph(algo: PlaneGraphGenAlgo, ctx: CanvasRenderingContext2D, cntNode: number) {
+        switch (algo) {
+            case "LeftRight":
+                const gen = new LeftRightGen();
+                return gen.create(ctx, cntNode);
+        }
     }
 
     /**
@@ -331,101 +333,6 @@ export class Gamepage extends Page {
     }
 
     /**
-     * 平面グラフを構成する頂点と辺を作成する。
-     * @param opeg - グラフ操作オブジェクト
-     * @param cntNode - 作成する頂点の数
-     */
-    private createPlanegraph(opeg: graph.Graph, cntNode: number) {
-        const ctx = opeg.getCtx();
-
-        // 頂点を作成
-        const CNT_NODE = cntNode;
-        let preNode = null;
-        for (let i = 0; i < CNT_NODE; i++) {
-            let x = Math.random() * 460 + 20;
-            let y = Math.random() * 460 + 20;
-            const node = new graph.GraphNode(ctx, x, y, i);
-            opeg.addGraphElement(node);
-
-            if (this.getRandint(0, 2) == 0 && preNode != null) {
-                opeg.addGraphElement(new graph.GraphEdge(ctx, preNode, node));
-            }
-            preNode = node;
-        }
-
-        // 辺を作成
-        const nodes = opeg.getNodes();
-        const edges = this.createPlanegraphEdges(CNT_NODE);
-        for (const edge of edges) {
-            opeg.addGraphElement(new graph.GraphEdge(ctx, nodes[edge[0]], nodes[edge[1]]));
-        }
-
-        if (this.textInfo) this.textInfo.innerText = `node:${CNT_NODE} edge:${edges.length}`;
-    }
-
-    /**
-     * 平面グラフの辺をランダムに生成する。
-     * @param cntNode - 頂点数
-     * @returns 有効な辺のリスト
-     */
-    private createPlanegraphEdges(cntNode: number): [number, number][] {
-        let edgesLeft: [number, number][] = [], edgesRight: [number, number][] = [];
-        let cntFail = 0;
-        while (cntFail < 1000) {
-            const addLeft = this.getRandint(0, 2) == 0;
-            const start = this.getRandint(0, cntNode - 2);
-            const end = this.getRandint(start + 2, cntNode);
-            const newEdge: [number, number] = [start, end];
-            if (addLeft && this.checkCrossing(edgesLeft, newEdge)) edgesLeft.push(newEdge);
-            else if (this.checkCrossing(edgesRight, newEdge)) edgesRight.push(newEdge);
-            else {
-                cntFail++;
-                continue;
-            }
-            cntFail = 0;
-        }
-
-        console.log(edgesLeft.sort());
-        console.log("-----");
-        console.log(edgesRight.sort());
-
-        const all_edges = edgesLeft.concat(edgesRight);
-        return all_edges;
-    }
-
-    /**
-     * 新たな辺を追加したときの交差判定を行う。
-     * @param existedEdges - 既存の辺集合
-     * @param newEdge - 新たに追加する辺
-     * @returns 交差が起こるかどうか
-     */
-    private checkCrossing(existedEdges: [number, number][], newEdge: [number, number]): boolean {
-        for (const edge of existedEdges) {
-            const inside = edge[0] <= newEdge[0] && newEdge[1] <= edge[1];
-            const outside = newEdge[0] <= edge[0] && edge[1] <= newEdge[1];
-            const equal = newEdge[0] == edge[0] && edge[1] == newEdge[1];
-            if (equal || !(inside || outside)) return false;
-        }
-        return true;
-    }
-
-    /**
-     * 指定した範囲の整数をランダムに生成する。
-     * [start, end)の範囲。
-     * @param start - 範囲の始まり（含む）
-     * @param end - 範囲の終わり（含まない）
-     * @returns ランダムな整数
-     */
-    private getRandint(start: number, end: number): number { // [start, end)
-        if (start > end) {
-            const tmp = start;
-            start = end;
-            end = tmp;
-        }
-        return Math.floor(Math.random() * (end - start)) + start;
-    }
-
-    /**
      * ゲーム終了時の処理を行う。
      * @param opeg - グラフ操作オブジェクト
      */
@@ -443,7 +350,10 @@ export class Gamepage extends Page {
             else eventInfo[0].removeEventListener(eventInfo[1], eventInfo[2]);
         }
 
-        if (this._callback) this._callback({ time: "3:00.00", cntNode: this.cntNode });
-        else throw new Error("Property is unsetted");
+        // データ共有オブジェクトに時間を登録
+        manager.state.result.timeMs = -1;
+
+        // タイトル画面に遷移
+        manager.goto("result");
     }
 }
