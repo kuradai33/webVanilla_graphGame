@@ -1,4 +1,3 @@
-import * as define from "./define";
 import { SparkRenderer } from "./render/spark";
 
 /**
@@ -118,7 +117,7 @@ export class GraphNode extends Shape {
      * 繰り返される処理。主に描画。
      * @param {number} time - ゲーム開始からの経過時間(ms) 
      */
-    public loop(time: number) {
+    public override loop(time: number) {
         // 直前にドラッグが終了した時刻を記録
         if (this.prevStatus == "drag" && this.status == "normal") {
             this.lastDragedTime = time;
@@ -249,7 +248,7 @@ export class GraphEdge extends Shape {
         this.node2 = n2;
     }
 
-    public loop(time: number) {
+    public override loop(time: number) {
         this.draw(time);
     }
 
