@@ -1,23 +1,15 @@
+import { manager } from "../index";
 import Page from "./Page";
-
-export type TitleOutput = { cntNode: number };
-type Callback = (data: TitleOutput) => void;
 
 /**
  * タイトル画面を表示する。
  */
-export class Titlepage extends Page {
-    protected _callback?: Callback;
-
+export default class Titlepage extends Page {
     constructor(root: HTMLElement) {
         super(root);
     }
 
-    set callback(callback: Callback) {
-        this._callback = callback;
-    }
-
-    display(): void {
+    override display(): void {
         this.root.innerHTML = `
             <section class="screen-title" data-screen>
                 <h1>Planarity Challenge</h1>
@@ -51,9 +43,11 @@ export class Titlepage extends Page {
 
         const btnGamestart = document.getElementById("btn_gamestart") as HTMLButtonElement;
         btnGamestart.addEventListener("click", () => {
+            // 頂点数をデータ共有オブジェクトに登録
             const cntNode = Number((document.getElementById("vcount") as HTMLInputElement).value);
-            if (this._callback) this._callback({ cntNode: cntNode });
-            else throw new Error("Property is unsetted");
+            manager.state.settings.cntNode = cntNode;
+            // ゲーム画面に遷移
+            manager.goto("game");
         });
     }
 }

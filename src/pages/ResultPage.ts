@@ -1,32 +1,15 @@
+import { manager } from "../index";
 import Page from "./Page";
-
-
-type Input = { time: string; cntNode: number };
-
-export type ResultOutput = { page: "title" } | { page: "game", data: { cntNode: number } };
-type Callback = (data: ResultOutput) => void;
 
 /**
  * 結果画面を表示する。
  */
-export class Resultpage extends Page {
-    protected _callback?: Callback;
-
-    /**
-     * グラフの頂点数。
-     * 前ページからのデータを保持するために使用する。
-     */
-    private cntNode: number = -1;
-
+export default class Resultpage extends Page {
     constructor(root: HTMLElement) {
         super(root);
     }
 
-    set callback(callback: Callback) {
-        this._callback = callback;
-    }
-
-    display(data: Input = { time: "--:--.--", cntNode: 10 }): void {
+    override display(): void {
         this.root.innerHTML = `
             <section class="screen-result">
                 <h2>結果</h2>
@@ -58,27 +41,16 @@ export class Resultpage extends Page {
                 </footer>
             </section>`;
 
-        this.cntNode = data.cntNode; // リトライ時の頂点数保持用
-
         // 「もう一度」ボタンにイベントを登録
         const actionRetry = () => {
-            if (this._callback) {
-                this._callback({
-                    page: "game",
-                    data: {
-                        cntNode: this.cntNode,
-                    },
-                });
-            }
-            else throw new Error("Property is unsetted");
+            manager.goto("game");
         };
         const btnRetry = document.getElementById("btn_retry") as HTMLButtonElement;
         btnRetry.addEventListener("click", actionRetry);
 
         // 「タイトルへ」ボタンにイベントを登録
         const actionBackTitle = () => {
-            if (this._callback) this._callback({ page: "title" });
-            else throw new Error("Property is unsetted");
+            manager.goto("title");
         };
         const btnBackTitle = document.getElementById("btn_backtitle") as HTMLButtonElement;
         btnBackTitle.addEventListener("click", actionBackTitle);
