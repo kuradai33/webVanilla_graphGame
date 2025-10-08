@@ -1,17 +1,12 @@
-import PageManager from "./page";
+import PageManager from "./pages/PageManager";
 
 const page = document.getElementById("page") as HTMLElement;
+export const manager = new PageManager(page, "title");
 
 // ページ読み込み時の処理
-document.addEventListener("DOMContentLoaded", () => {
-    // onGamePage();
+// document.addEventListener("DOMContentLoaded", () => {
 
-    // onTitlePage();
-    const buttonLD = document.getElementById("switch_mode") as HTMLButtonElement;
-    buttonLD?.addEventListener("click", switchLightDarkMode);
-
-    const pm = new PageManager(page, "title");
-});
+// });
 
 function switchLightDarkMode() {
     const mode = document.documentElement.getAttribute("data-theme") || "light";
