@@ -1,4 +1,4 @@
-import { SparkRenderer } from "./render/spark";
+import { SparkRenderer } from "../render/spark";
 
 /**
  * 図形の基本クラス。
@@ -10,6 +10,11 @@ class Shape {
 }
 
 type NodeStatus = "normal" | "hover" | "drag";
+
+/**
+ * 頂点の半径
+ */
+const nodeRadius = 18;
 
 /**
  * グラフ上の頂点を表すクラス。
@@ -27,15 +32,15 @@ export class GraphNode extends Shape {
     private readonly graphicGlow: HTMLCanvasElement = document.createElement('canvas');
     private readonly graphicShadow: HTMLCanvasElement = document.createElement('canvas');
 
-    private readonly neonColor = {
+    private readonly nodeColor = {
         core: "#00e5ff",
         ring: "#0083c4",
         glowInner: "rgba(0,229,255,0.85)",
         glowOuter: "rgba(0,229,255,0.0)",
     }
 
-    private readonly neonStyle = {
-        radius: 18,
+    private readonly nodeStyle = {
+        radius: nodeRadius,
         ringWidth: 5,
         glowRadius: 30,
         pulse: true,
@@ -57,8 +62,8 @@ export class GraphNode extends Shape {
         this.id = id;
 
         // グロースプライトの作成
-        const { glowInner, glowOuter } = this.neonColor;
-        const { radius, glowRadius } = this.neonStyle;
+        const { glowInner, glowOuter } = this.nodeColor;
+        const { radius, glowRadius } = this.nodeStyle;
 
         this.graphicGlow.height = 2 * glowRadius;
         this.graphicGlow.width = 2 * glowRadius;
@@ -141,8 +146,8 @@ export class GraphNode extends Shape {
 
         const ctx = this.ctx;
         const cx = this.center_x, cy = this.center_y;
-        const { core, ring } = this.neonColor;
-        const { radius, ringWidth, glowRadius, pulse, pulsePeriodMS } = this.neonStyle;
+        const { core, ring } = this.nodeColor;
+        const { radius, ringWidth, glowRadius, pulse, pulsePeriodMS } = this.nodeStyle;
 
         const pulseScale =
             pulse ?
@@ -409,26 +414,18 @@ export class Graph {
     private ctx: CanvasRenderingContext2D;
 
     private readonly spackRenderer = new SparkRenderer();
-
-    private readonly graphicGlow = document.createElement("canvas");
+    private readonly canvasSize: { h: number; w: number };
 
     /**
      * グラフ操作用のインスタンスを生成する。
      * @param {CanvasRenderingContext2D} ctx 描画に使用するCanvasのコンテキスト
      */
-    constructor(ctx: CanvasRenderingContext2D) {
+    constructor(private canvas: HTMLCanvasElement) {
+        const ctx = canvas.getContext("2d")!;
         this.ctx = ctx;
         this.spackRenderer.ctx = ctx;
 
-        const c = this.graphicGlow;
-        c.width = c.height = 64;
-        const g = c.getContext("2d")!;
-        const grad = g.createRadialGradient(32, 32, 0, 32, 32, 24);
-        grad.addColorStop(0, "rgba(255,255,255,1)");
-        grad.addColorStop(1, "rgba(255,255,255,0)");
-        g.fillStyle = grad;
-        g.beginPath(); g.arc(32, 32, 24, 0, 2 * Math.PI); g.fill();
-        this.graphicGlow = c;
+        this.canvasSize = { h: canvas.height, w: canvas.width };
     }
 
     /**
@@ -450,6 +447,62 @@ export class Graph {
     public addGraphElement(e: Shape) {
         if (e instanceof GraphNode) this.graphNodes.push(e);
         else if (e instanceof GraphEdge) this.graphEdges.push(e);
+    }
+
+    private mouseStartX: number = 0;
+    private mouseStartY: number = 0;
+    private nodeStartX: number = 0;
+    private nodeStartY: number = 0;
+    private operatedNode: GraphNode | null = null;
+    private isDrag = false;
+    /**
+     * 
+     * @param mouseStatus 
+     * @param mousePos 
+     */
+    public setNodePos(mouseStatus: "down" | "move" | "up", mousePos: { x: number; y: number }) {
+        const mx = mousePos.x, my = mousePos.y;
+        switch(mouseStatus) {
+            case "down":
+                this.mouseStartX = mx;
+                this.mouseStartY = my;
+                this.operatedNode = this.getClosestNode(mx, my);
+                if (this.operatedNode) this.operatedNode.status = "drag";
+                else return;
+                const pos = this.operatedNode?.getPos();
+                if (pos != undefined) {
+                    this.nodeStartX = pos[0];
+                    this.nodeStartY = pos[1];
+                }
+                
+                this.isDrag = true;
+                break;
+            case "move":
+                if(!this.isDrag) return;
+                const processed_x = Math.min(
+                    Math.max(
+                        mx - this.mouseStartX + this.nodeStartX,
+                        nodeRadius
+                    ),
+                    this.canvasSize.w - nodeRadius
+                );
+                const processed_y = Math.min(
+                    Math.max(
+                        my - this.mouseStartY + this.nodeStartY,
+                        nodeRadius
+                    ),
+                    this.canvasSize.h - nodeRadius
+                );
+
+                this.operatedNode?.setPos(processed_x, processed_y);
+                break;
+            case "up":
+                if(!this.isDrag) return;
+                if (this.operatedNode) this.operatedNode.status = "normal";
+                this.isDrag = false;
+                break;
+        }
+        console.log(mouseStatus);
     }
 
     /**
@@ -506,15 +559,21 @@ export class Graph {
     }
 
     /**
-     * グラフの頂点と辺、辺の交差点のスパークを描画する。
+     * 辺の更新と再描画を行う。
      * @param {number} time - 経過時間(ms)
      */
     public loop(time: number) {
         this.updateEdgeStatus();
-        for (const e of this.graphEdges) e.loop(time);
-        
-        this.drawSpark(time);
+        this.draw(time);
+    }
 
+    /**
+     * グラフの頂点と辺、辺の交差点のスパークを描画する。
+     * @param {number} time - 経過時間(ms)
+     */
+    private draw(time: number) {
+        for (const e of this.graphEdges) e.loop(time);
+        this.drawSpark(time);
         for (const n of this.graphNodes) n.loop(time);
     }
 
