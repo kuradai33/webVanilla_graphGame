@@ -24,7 +24,14 @@ export default class Titlepage extends Page {
 
                         <label for="vcount">
                             頂点数
-                            <input id="vcount" type="number" min="6" max="60" value="10" required />
+                            <input
+                                id="vcount"
+                                type="number"
+                                min="6"
+                                max="60"
+                                value="${manager ? manager.state.settings.cntNode : 10}"
+                                required
+                            />
                         </label>
                     </fieldset>
 
