@@ -1,14 +1,15 @@
-import { IPlaneGraphGenerator } from "./IPlaneGraphGenerator";
-import { Graph, GraphNode, GraphEdge } from "../graph";
+import { PlaneGraphGenerator } from "./PlaneGraphGenerator";
+import { Graph, GraphNode, GraphEdge } from "./graph";
 
-export default class LeftRightGen implements IPlaneGraphGenerator {
+export default class LeftRightGen implements PlaneGraphGenerator {
     /**
      * 平面グラフを構成する頂点と辺を作成する。
      * @param opeg - グラフ操作オブジェクト
      * @param cntNode - 作成する頂点の数
      */
-    public create(ctx: CanvasRenderingContext2D, cntNode: number): Graph {
-        const g = new Graph(ctx);
+    public create(canvas: HTMLCanvasElement, cntNode: number): Graph {
+        const g = new Graph(canvas);
+        const ctx = canvas.getContext("2d")!;
 
         // 頂点を作成
         const CNT_NODE = cntNode;
