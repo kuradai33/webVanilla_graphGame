@@ -15,7 +15,7 @@ export default class PageManager {
      * ページ間のデータ共有用オブジェクト
      */
     public state: AppState = {
-        settings: { cntNode: -1 },
+        settings: { cntNode: 10 },
         result: { timeMs: -1 },
     };
 
