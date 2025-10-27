@@ -1,5 +1,5 @@
-import { Graph } from "../graph";
+import { Graph } from "./graph";
 
-export interface IPlaneGraphGenerator {
-    create( ctx: CanvasRenderingContext2D, cntNode: number ): Graph;
+export interface PlaneGraphGenerator {
+    create(canvas: HTMLCanvasElement, cntNode: number): Graph;
 }
