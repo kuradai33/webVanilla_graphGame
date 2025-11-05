@@ -1,10 +1,13 @@
 @font-face {
-    font-family: 'Quadaptor'; /* 使用したいフォント名 */
-    src: url('./Quadaptor.otf') format('opentype'); /* OTFファイルへのパス */
+    font-family: 'Quadaptor';
+    /* 使用したいフォント名 */
+    src: url('./Quadaptor.otf') format('opentype');
+    /* OTFファイルへのパス */
 }
 
 canvas {
-    border: 2px solid #000; /* 黒の2px実線 */
+    border: 2px solid #000;
+    /* 黒の2px実線 */
     /* border-radius: 8px;      角を少し丸める（オプション） */
 }
 
@@ -13,8 +16,8 @@ canvas {
     margin: clamp(1rem, 4vh, 2rem) auto;
     padding: var(--pico-spacing, 1rem) calc(var(--pico-spacing, 1rem) * 1.25);
     border-radius: var(--pico-border-radius, 12px);
-    border: 1px solid var(--pico-muted-border-color, rgba(0,0,0,0.12));
-    box-shadow: var(--pico-shadow, 0 6px 20px rgba(0,0,0,0.06));
+    border: 1px solid var(--pico-muted-border-color, rgba(0, 0, 0, 0.12));
+    box-shadow: var(--pico-shadow, 0 6px 20px rgba(0, 0, 0, 0.06));
     background: var(--panel-bg, #f5f5f5);
 }
 
@@ -22,10 +25,107 @@ canvas {
     background: #17191c;
 }
 
-/* @media (prefers-color-scheme: dark) {
-    #screen-title {
-        --panel-bg: #17191c;
-        border-color: rgba(255,255,255,0.08);
-        box-shadow: 0 4px 18px rgba(0,0,0,0.45);
-    }
-} */
+.screen-result {
+    margin: clamp(1rem, 4vh, 2rem) auto;
+    padding: var(--pico-spacing, 1rem) calc(var(--pico-spacing, 1rem) * 1.25);
+    border-radius: var(--pico-border-radius, 12px);
+    border: 1px solid var(--pico-muted-border-color, rgba(0, 0, 0, 0.12));
+    box-shadow: var(--pico-shadow, 0 6px 20px rgba(0, 0, 0, 0.06));
+    background: #17191c;
+}
+
+/* Result table (dark / HUD-like) */
+#result_metrics {
+    /* セルの境界を個別に制御 */
+    border-radius: 10px;
+    border-collapse: separate;
+    border-spacing: 0;
+    --rm-bg: rgba(10, 15, 26, 0.35);
+    --rm-row-odd: rgba(255, 255, 255, 0.02);
+    --rm-row-even: rgba(255, 255, 255, 0.06);
+    --rm-text: #e8f6ff;
+    /* 細線 */
+    --rm-border: rgba(160, 240, 255, 0.28);
+    /* 太線/縦線 */
+    --rm-border-strong: rgba(160, 240, 255, 0.6);
+    --rm-head-bg: rgba(0, 229, 255, 0.06);
+    overflow: hidden;
+}
+
+/* セルの基本パディング（Picoのデフォに近いが少し詰める） */
+#result_metrics th,
+#result_metrics td {
+    padding: 0.6rem 0.8rem;
+    vertical-align: middle;
+    /* タイムを折返さない */
+    white-space: nowrap;
+    /* 数字を等幅寄りに */
+    font-variant-numeric: tabular-nums;
+    background: var(--rm-bg);
+    color: var(--rm-text);
+}
+
+/* ヘッダーの見た目 */
+#result_metrics thead tr:first-child th {
+    text-align: center;
+    background: var(--rm-head-bg);
+    /* 見出し1行目の下：細い線 */
+    border-bottom: 1px solid var(--rm-border);
+}
+
+#result_metrics thead tr:nth-child(2) th {
+    text-align: center;
+    background: var(--rm-head-bg);
+    /* 見出し2行目の下：太い線 */
+    border-bottom: 2px solid var(--rm-border-strong);
+}
+
+/* 縦の区切り：合計列（3列目）の「次」、つまり 4列目に縦線 */
+#result_metrics thead tr:nth-child(2) th:nth-child(4),
+#result_metrics tbody td:nth-child(4) {
+    border-left: 2px solid var(--rm-border-strong);
+}
+
+/* 幅を指定 */
+/* アラインメント指定：
+   - 見出しは中央
+   - 1列目（順位）は中央
+   - それ以外は左寄せ
+*/
+#result_metrics thead th {
+    text-align: center;                                       
+}
+
+#result_metrics tbody td:first-child {
+    width: 100px;
+    text-align: center;
+}
+
+#result_metrics tbody td:nth-child(2) {
+    text-align: left;
+}
+
+#result_metrics tbody td:nth-child(3),
+#result_metrics tbody td:nth-child(4),
+#result_metrics tbody td:nth-child(5),
+#result_metrics tbody td:nth-child(6),
+#result_metrics tbody td:nth-child(7),
+#result_metrics tbody td:nth-child(8) {
+    width: 150px;
+    text-align: right;
+    padding-right: 38px;
+}
+
+/* ゼブラストライプ（行の視認性） */
+#result_metrics tbody tr:nth-child(odd) {
+    background: var(--rm-row-odd);
+}
+
+#result_metrics tbody tr:nth-child(even) {
+    background: var(--rm-row-even);
+}
+
+/* 行と最終行のボーダー（控えめ） */
+#result_metrics tbody tr:last-child td {
+    border-bottom: 1px solid var(--rm-border);
+}
