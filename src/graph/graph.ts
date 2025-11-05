@@ -418,7 +418,7 @@ export class Graph {
 
     /**
      * グラフ操作用のインスタンスを生成する。
-     * @param {CanvasRenderingContext2D} ctx 描画に使用するCanvasのコンテキスト
+     * @param canvas - 描画に使用するCanvas
      */
     constructor(private canvas: HTMLCanvasElement) {
         const ctx = canvas.getContext("2d")!;
@@ -442,7 +442,7 @@ export class Graph {
 
     /**
      * グラフ要素を追加する。
-     * @param {Shape} elem ノードまたは辺
+     * @param {Shape} e ノードまたは辺
      */
     public addGraphElement(e: Shape) {
         if (e instanceof GraphNode) this.graphNodes.push(e);
