@@ -7,16 +7,24 @@ type PageLabel = "title" | "game" | "result";
 
 export type AppState = {
     settings: { cntNode: number };
-    result: { timeMs: number };
+    /**
+     * ゲームの結果
+     * @property id
+     * @property name - プレイヤー名
+     * @property timeMsByRound - ラウンド毎の終了時の現在時刻
+     */
+    results: { id: number; name: string, totalTimeMs: number; timeMsByRound: number[] }[];
 };
 
 export default class PageManager {
+    private resultNextId = 1;
+
     /**
      * ページ間のデータ共有用オブジェクト
      */
     public state: AppState = {
         settings: { cntNode: 10 },
-        result: { timeMs: -1 },
+        results: [],
     };
 
     /**
@@ -52,5 +60,15 @@ export default class PageManager {
                 break;
         }
         this.curPage.display();
+    }
+
+    public addResult(name: string, totalTimeMs: number, timeMsByRound: number[]) {
+        this.state.results.push({
+            id: this.resultNextId,
+            name: name,
+            totalTimeMs: totalTimeMs,
+            timeMsByRound: timeMsByRound,
+        });
+        this.resultNextId++;
     }
 };
