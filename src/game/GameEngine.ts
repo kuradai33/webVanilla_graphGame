@@ -12,11 +12,21 @@ type PlaneGraphGenAlgo = "LeftRight";
  */
 const ANIMATION_FPS = 60;
 
+/**
+ * ラウンド数
+ */
+const MAX_ROUND = 5;
+
 export default class GameEngine {
     private readonly canvasOrigin: { y: number; x: number };
 
-    private controller: AbortController;
-    private signal: AbortSignal;
+    /**
+     * 現在のラウンド数
+     */
+    private curRound = 1;
+
+    private controller?: AbortController;
+    private signal?: AbortSignal;
 
     /**
      * HTML要素に登録されたイベントのリスト。
@@ -25,6 +35,16 @@ export default class GameEngine {
     private events: [HTMLElement, keyof HTMLElementEventMap, any, boolean | AddEventListenerOptions | null][] = [];
 
     private timer: Timer;
+    private opeg?: Graph;
+
+    /**
+     * 各ラウンドでの時間
+     */
+    private resultTimeMsByRound: number[] = [];
+    /**
+     * 前回ラウンド終了時の時刻
+     */
+    private prevRoundTimeMs = 0;
 
     /**
      * ストップウォッチを画面に描画する
@@ -35,36 +55,27 @@ export default class GameEngine {
         const rect = this.canvas.getBoundingClientRect();
         this.canvasOrigin = { y: rect.top, x: rect.left };
 
-        this.controller = new AbortController();
-        this.signal = this.controller.signal;
-
+        // キャンバスへの描画用
         const ctx = canvas.getContext("2d")!;
 
         // ストップウォッチの設定
         const hudW = 180, hudH = 48, pad = 10;
         this.stopwatch = new NeonStopwatch(ctx, canvas.width - hudW - pad, canvas.height - hudH - pad, hudW, hudH);
 
-        // 初期描画
-        const cntNode = manager.state.settings.cntNode;
-        const opeg = this.createPlaneGraph("LeftRight", canvas, cntNode); // 平面グラフを作成
-
-        opeg.loop(0); // 全ての要素を描画
-
-        // キャンバスなどにマウスイベントを設定
-        this.settingCanvasEvent(opeg);
-
         // タイマーを作成
         this.timer = new Timer(
             ANIMATION_FPS,
             (time: number) => {
                 // 再描画
-                ctx.clearRect(0, 0, canvas.height, canvas.width);
+                ctx.clearRect(0, 0, canvas.height, canvas.width); // 描画をリセット
                 drawBackground(ctx, { height: canvas.height, width: canvas.width }); // 背景を描画
-                opeg.loop(time); // グラフを更新して描画
+                this.opeg?.loop(time); // グラフを更新して描画
 
                 this.stopwatch?.draw(time);
             }
         );
+
+        this.startGameRound();
     }
 
     /**
@@ -88,6 +99,10 @@ export default class GameEngine {
      * @param opeg - グラフ操作オブジェクト
      */
     private settingCanvasEvent(opeg: Graph) {
+        // イベントを終了させるため
+        this.controller = new AbortController();
+        this.signal = this.controller.signal;
+
         const eventMousedown = (e: MouseEvent) => {
             const x: number = e.clientX - this.canvasOrigin.x;
             const y: number = e.clientY - this.canvasOrigin.y;
@@ -106,7 +121,7 @@ export default class GameEngine {
         const eventMouseup = () => {
             opeg.setNodePos("up", { x: -1, y: -1 });
             if (!opeg.checkCrossedGraph()) {
-                this.finishGame(opeg);
+                this.finishGameRound();
             }
         };
         this.setEvent(this.root, "mouseup", eventMouseup);
@@ -134,29 +149,55 @@ export default class GameEngine {
             this.events.push([domElement, event, func, null]);
         }
     }
+    
+    /**
+     * ラウンドの開始処理を行う。
+     */
+    private startGameRound() {
+        // 初期描画
+        const cntNode = manager.state.settings.cntNode;
+        const opeg = this.createPlaneGraph("LeftRight", this.canvas, cntNode); // 平面グラフを作成
+
+        // キャンバスなどにマウスイベントを設定
+        this.settingCanvasEvent(opeg);
+
+        this.opeg = opeg;
+    }
 
     /**
-     * ゲーム終了時の処理を行う。
-     * @param opeg - グラフ操作オブジェクト
+     * ラウンドの終了処理を行う。
      */
-    private finishGame(opeg: Graph) {
+    private finishGameRound() {
         // イベントリスナを削除
-        this.controller.abort();
+        this.controller?.abort();
 
-        // アニメーションを停止
-        this.timer?.abort();
+        this.opeg?.drawClearedGraph();
 
-        opeg.drawClearedGraph();
-
+        // 登録されているすべてのイベントを削除
         for (const eventInfo of this.events) {
             if (eventInfo[3]) eventInfo[0].removeEventListener(eventInfo[1], eventInfo[2], eventInfo[3]);
             else eventInfo[0].removeEventListener(eventInfo[1], eventInfo[2]);
         }
 
-        // データ共有オブジェクトに時間を登録
-        manager.state.result.timeMs = -1;
+        const time = this.timer.getTime();
+        this.resultTimeMsByRound.push(time - this.prevRoundTimeMs); // ラウンド終了時の時刻を記録
+        this.prevRoundTimeMs = time;
 
-        // タイトル画面に遷移
-        manager.goto("result");
+        // 最終ラウンドではない
+        if (this.curRound < MAX_ROUND) {
+            this.startGameRound(); // グラフをリセット
+            this.curRound++;
+        }
+        // 最終ラウンド
+        else {
+            // データ共有オブジェクトに時間を登録
+            manager.addResult("hoge", time, this.resultTimeMsByRound);
+
+            // アニメーションを停止
+            this.timer?.abort();
+
+            // タイトル画面に遷移
+            manager.goto("result");
+        }
     }
 }
