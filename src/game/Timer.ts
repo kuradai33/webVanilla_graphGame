@@ -23,16 +23,17 @@ export class Timer {
      * @param fps - 定期実行のFPS
      * @param fn - 定期的に実行する処理
      */
-    constructor(private readonly fps: number, fn: (time: number) => void) {
+    constructor(fps: number, fn: (time: number) => void) {
         this.startTime = performance.now();
 
+        // fpsの頻度でfnを繰り返し実行
         const loop = (time: number) => {
             const nextTime = time;
             if (this.curTime == -1) this.curTime = nextTime;
 
             if (nextTime - this.curTime > 1000 / fps) {
                 this.curTime = nextTime;
-                fn(time); // 渡された処理を実行
+                fn(nextTime - this.startTime); // 渡された処理を実行
             }
             this.animationFrameId = requestAnimationFrame(loop);
         };
@@ -48,6 +49,7 @@ export class Timer {
      * アニメーションを停止し、インスタンスを廃棄する。
      */
     public abort() {
+        if (this.isAborted) throw new ReferenceError("This instance has already been aborted.");
         // アニメーションを停止
         cancelAnimationFrame(this.animationFrameId);
         this.isAborted = true;
