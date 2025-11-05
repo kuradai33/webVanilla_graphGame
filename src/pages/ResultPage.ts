@@ -15,12 +15,11 @@ export default class Resultpage extends Page {
                 <h2>結果</h2>
 
                 <!-- 概要カード -->
-                <article id="result-summary" aria-busy="true">
+                <!-- <article id="result-summary" aria-busy="true">
                     <!-- タイトル・要約などを動的に挿入 -->
-                </article>
+                </article> -->
 
                 <!-- メトリクス（任意数のKPIを自由に表示） -->
-                <h3>メトリクス</h3>
                 <table id="result_metrics">
                     <thead>
                         <tr>
@@ -90,7 +89,7 @@ export default class Resultpage extends Page {
             for (let i = 0; i < 5; i++) {
                 detailTime += `<td>${i < len ? Resultpage.format(result.timeMsByRound[i]) : ""}</td>`;
             }
-            return `<tr>` +
+            return `<tr ${result.id == results.length ? "style='background: rgba(160, 240, 255, 0.28);'" : ""}>` +
                     `<td>${idx + 1}</td>` +
                     `<td>${result.name}</td>` +
                     `<td>${Resultpage.format(result.totalTimeMs)}</td>` +
