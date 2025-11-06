@@ -1,5 +1,5 @@
 import { PlaneGraphGenerator } from "./PlaneGraphGenerator";
-import { Graph, GraphNode, GraphEdge } from "./graph";
+import { Graph, GraphNode, GraphEdge } from "./Graph";
 
 export default class LeftRightGen implements PlaneGraphGenerator {
     /**
