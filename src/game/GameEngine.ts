@@ -1,5 +1,5 @@
 import { manager } from "../index";
-import { Graph, GraphNode } from "../graph/graph";
+import { Graph, GraphNode } from "../graph/Graph";
 import LeftRightGen from "../graph/LeftRightGen";
 import { Timer } from "./Timer";
 import { NeonStopwatch } from "../render/NeonStopwatch";
