@@ -59,10 +59,6 @@ export default class LeftRightGen implements PlaneGraphGenerator {
             cntFail = 0;
         }
 
-        console.log(edgesLeft.sort());
-        console.log("-----");
-        console.log(edgesRight.sort());
-
         const all_edges = edgesLeft.concat(edgesRight);
         return all_edges;
     }

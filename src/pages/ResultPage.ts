@@ -97,7 +97,6 @@ export default class Resultpage extends Page {
                 `</tr>`;
         });
         const resultTableBody = document.getElementById("result_metrics_body") as HTMLTableElement;
-        console.log(tbhtml);
         resultTableBody.innerHTML = tbhtml.join("");
     }
 

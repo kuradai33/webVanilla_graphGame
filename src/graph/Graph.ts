@@ -502,7 +502,6 @@ export class Graph {
                 this.isDrag = false;
                 break;
         }
-        console.log(mouseStatus);
     }
 
     /**
@@ -606,7 +605,6 @@ export class Graph {
         let closest_node: GraphNode | null = null;
         for (const node of this.graphNodes) {
             const dist = node.getDist(x, y);
-            console.log(`${node.id} ${dist}`);
             if (min_dist > dist) {
                 min_dist = dist;
                 closest_node = node;
