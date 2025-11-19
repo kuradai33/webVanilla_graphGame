@@ -15,8 +15,8 @@ export default class LeftRightGen implements PlaneGraphGenerator {
         const CNT_NODE = cntNode;
         let preNode = null;
         for (let i = 0; i < CNT_NODE; i++) {
-            let x = Math.random() * 460 + 20;
-            let y = Math.random() * 460 + 20;
+            const x = Math.random() * 460 + 20;
+            const y = Math.random() * 460 + 20;
             const node = new GraphNode(ctx, x, y, i);
             g.addGraphElement(node);
 
@@ -34,6 +34,18 @@ export default class LeftRightGen implements PlaneGraphGenerator {
         }
 
         // if (this.textInfo) this.textInfo.innerText = `node:${CNT_NODE} edge:${edges.length}`;
+        // 交差点数が一定以上になるまで繰り返す
+        // 一定以上繰り返されたら終了する
+        const MIN_CROSSED_POINTS = 3, MAX_LOOP = 100;
+        let cntLoop = 0;
+        while (g.culCntCrossedPoint() < MIN_CROSSED_POINTS && cntLoop < MAX_LOOP) {
+            for (const node of g.getNodes()) {
+                const x = Math.random() * 460 + 20;
+                const y = Math.random() * 460 + 20;
+                node.setPos(x, y);
+            }
+            cntLoop++;
+        }
         return g;
     }
 

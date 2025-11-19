@@ -526,6 +526,22 @@ export class Graph {
     }
 
     /**
+     * グラフ内の交差点の数を計算する。
+     * @returns グラフの中の交差点の数
+     */
+    public culCntCrossedPoint(): number {
+        const len = this.graphEdges.length;
+        let cnt = 0;
+        for (let i = 0; i < len; i++) for (let j = i + 1; j < len; j++) {
+            if (this.graphEdges[i].checkNeighbor(this.graphEdges[j])) continue;
+            if (this.graphEdges[i].checkCrossed(this.graphEdges[j])) {
+                cnt++;
+            }
+        }
+        return cnt;
+    }
+
+    /**
      * 各辺について隣接した辺以外と交差しているかを判定する。
      * @returns {boolean[]} 辺が交差しているかの結果
      */
