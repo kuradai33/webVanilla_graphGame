@@ -3,10 +3,12 @@ import Gamepage from "./GamePage";
 import Resultpage from "./ResultPage";
 import Page from "./Page";
 
+import { Levels } from "../define";
+
 type PageLabel = "title" | "game" | "result";
 
 export type AppState = {
-    settings: { cntNode: number };
+    settings: { cntNode: number; name: string; level: Levels };
     /**
      * ゲームの結果
      * @property id
@@ -23,7 +25,7 @@ export default class PageManager {
      * ページ間のデータ共有用オブジェクト
      */
     public state: AppState = {
-        settings: { cntNode: 10 },
+        settings: { cntNode: 10, name: "Player", level: "normal" },
         results: [],
     };
 

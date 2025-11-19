@@ -203,7 +203,7 @@ export default class GameEngine {
         // 最終ラウンド
         else {
             // データ共有オブジェクトに時間を登録
-            manager.addResult("hoge", time, this.resultTimeMsByRound);
+            manager.addResult(manager.state.settings.name, time, this.resultTimeMsByRound);
 
             // アニメーションを停止
             this.timer?.abort();
