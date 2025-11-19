@@ -4,6 +4,7 @@ import LeftRightGen from "../graph/LeftRightGen";
 import { Timer } from "./Timer";
 import { NeonStopwatch } from "../render/NeonStopwatch";
 import drawBackground from "../render/GameBackground";
+import { RoundLamps } from "../render/RoundLamps";
 
 type PlaneGraphGenAlgo = "LeftRight";
 
@@ -46,6 +47,8 @@ export default class GameEngine {
      */
     private prevRoundTimeMs = 0;
 
+    private renderRoundLamps;
+
     /**
      * ストップウォッチを画面に描画する
      */
@@ -62,16 +65,24 @@ export default class GameEngine {
         const hudW = 180, hudH = 48, pad = 10;
         this.stopwatch = new NeonStopwatch(ctx, canvas.width - hudW - pad, canvas.height - hudH - pad, hudW, hudH);
 
+        this.renderRoundLamps = new RoundLamps(canvas, {
+            x: 10, y: 10,
+            gap: 10,
+            size: 25,
+            color: "#00e5ff",
+            offColor: "#926900",
+        });
         // タイマーを作成
         this.timer = new Timer(
             ANIMATION_FPS,
             (time: number) => {
                 // 再描画
                 ctx.clearRect(0, 0, canvas.height, canvas.width); // 描画をリセット
-                drawBackground(ctx, { height: canvas.height, width: canvas.width }); // 背景を描画
+                drawBackground(canvas); // 背景を描画
                 this.opeg?.loop(time); // グラフを更新して描画
 
-                this.stopwatch?.draw(time);
+                this.stopwatch?.draw(time); // タイマーを描画
+                this.renderRoundLamps.draw(time); // ランプを描画
             }
         );
 
@@ -182,6 +193,7 @@ export default class GameEngine {
         const time = this.timer.getTime();
         this.resultTimeMsByRound.push(time - this.prevRoundTimeMs); // ラウンド終了時の時刻を記録
         this.prevRoundTimeMs = time;
+        this.renderRoundLamps.setRound(this.curRound, time);
 
         // 最終ラウンドではない
         if (this.curRound < MAX_ROUND) {

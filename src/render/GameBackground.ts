@@ -6,27 +6,19 @@ const bgColor = "#0b0f1a";
  * ゲーム画面背景のグリッドのスタイル
  */
 const bgGridStyle = {
-    /**
-     * グリッドのサイズ
-     */
-    grid: { height: 80, width: 80 },
-    /**
-     * グリッドの線の色
-     */
-    color: "#111829",
-    /**
-     * グリッドの線の幅
-     */
+    size: { height: 80, width: 80 },
+    lineColor: "#111829",
     lineWidth: 1,
 };
 
 /**
  * 背景を描画する。
  */
-export default function drawBackground(ctx: CanvasRenderingContext2D, canvasSize: { height: number; width: number }) {
-    const origin = { y: canvasSize.height / 2, x: canvasSize.width / 2 };
-    const { height, width } = canvasSize;
-    const { grid, color, lineWidth } = bgGridStyle;
+export default function drawBackground(canvas: HTMLCanvasElement) {
+    const ctx = canvas.getContext("2d");
+    const height = canvas.height, width = canvas.width;
+    const center = { y: height / 2, x: width / 2 };
+    const { size: grid, lineColor: color, lineWidth } = bgGridStyle;
     if (!ctx) throw new Error("Property is unsetted");
 
     // 背景
@@ -35,19 +27,19 @@ export default function drawBackground(ctx: CanvasRenderingContext2D, canvasSize
 
     // グリッドの描画
     // 縦線
-    for (let i = 0; origin.x + grid.width * i <= width; i++) {
-        drawVerticalLine(origin.x + grid.width * i, color, lineWidth, height, ctx);
+    for (let i = 0; center.x + grid.width * i <= width; i++) {
+        drawVerticalLine(center.x + grid.width * i, color, lineWidth, height, ctx);
     }
-    for (let i = 1; origin.x - grid.width * i >= 0; i++) {
-        drawVerticalLine(origin.x - grid.width * i, color, lineWidth, height, ctx);
+    for (let i = 1; center.x - grid.width * i >= 0; i++) {
+        drawVerticalLine(center.x - grid.width * i, color, lineWidth, height, ctx);
     }
 
     // 横線
-    for (let i = 0; origin.y + grid.height * i <= height; i++) {
-        drawHorizontalLine(origin.y + grid.height * i, color, lineWidth, width, ctx);
+    for (let i = 0; center.y + grid.height * i <= height; i++) {
+        drawHorizontalLine(center.y + grid.height * i, color, lineWidth, width, ctx);
     }
-    for (let i = 1; origin.y - grid.height * i >= 0; i++) {
-        drawHorizontalLine(origin.y - grid.height * i, color, lineWidth, width, ctx);
+    for (let i = 1; center.y - grid.height * i >= 0; i++) {
+        drawHorizontalLine(center.y - grid.height * i, color, lineWidth, width, ctx);
     }
 }
 
