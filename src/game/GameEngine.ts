@@ -1,12 +1,16 @@
 import { manager } from "../index";
-import { Graph, GraphNode } from "../graph/Graph";
+
+import { Graph } from "../graph/Graph";
 import LeftRightGen from "../graph/LeftRightGen";
+import DelaunayPlaneGraphGen from "../graph/DelaunayPlaneGraphGen";
+
 import { Timer } from "./Timer";
 import { NeonStopwatch } from "../render/NeonStopwatch";
+
 import drawBackground from "../render/GameBackground";
 import { RoundLamps } from "../render/RoundLamps";
 
-type PlaneGraphGenAlgo = "LeftRight";
+type PlaneGraphGenAlgo = "LeftRight" | "Delaunay";
 
 /**
  * アニメーションのフレームレート
@@ -97,11 +101,29 @@ export default class GameEngine {
      * @returns 作成されたグラフ
      */
     private createPlaneGraph(algo: PlaneGraphGenAlgo, canvas: HTMLCanvasElement, cntNode: number) {
+        let g: Graph;
         switch (algo) {
             case "LeftRight":
-                const gen = new LeftRightGen();
-                return gen.create(canvas, cntNode);
+                const gen1 = new LeftRightGen();
+                g = gen1.create(canvas, cntNode);
+            case "Delaunay":
+                const gen2 = new DelaunayPlaneGraphGen();
+                g = gen2.create(canvas, cntNode);
         }
+
+        // 交差点数が一定以上になるまで繰り返す
+        // 一定以上繰り返されたら終了する
+        const MIN_CROSSED_POINTS = 3, MAX_LOOP = 100;
+        let cntLoop = 0;
+        while (g.culCntCrossedPoint() < MIN_CROSSED_POINTS && cntLoop < MAX_LOOP) {
+            for (const node of g.getNodes()) {
+                const x = Math.random() * 460 + 20;
+                const y = Math.random() * 460 + 20;
+                node.setPos(x, y);
+            }
+            cntLoop++;
+        }
+        return g;
     }
 
     /**
@@ -167,7 +189,7 @@ export default class GameEngine {
     private startGameRound() {
         // 初期描画
         const cntNode = manager.state.settings.cntNode;
-        const opeg = this.createPlaneGraph("LeftRight", this.canvas, cntNode); // 平面グラフを作成
+        const opeg = this.createPlaneGraph("Delaunay", this.canvas, cntNode); // 平面グラフを作成
 
         // キャンバスなどにマウスイベントを設定
         this.settingCanvasEvent(opeg);
