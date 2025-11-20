@@ -1,4 +1,5 @@
 import { manager } from "../index";
+import { ANIMATION_FPS, MAX_ROUND, PlaneGraphGenAlgo } from "../define";
 
 import { Graph } from "../graph/Graph";
 import LeftRightGen from "../graph/LeftRightGen";
@@ -9,18 +10,6 @@ import { NeonStopwatch } from "../render/NeonStopwatch";
 
 import drawBackground from "../render/GameBackground";
 import { RoundLamps } from "../render/RoundLamps";
-
-type PlaneGraphGenAlgo = "LeftRight" | "Delaunay";
-
-/**
- * アニメーションのフレームレート
- */
-const ANIMATION_FPS = 60;
-
-/**
- * ラウンド数
- */
-const MAX_ROUND = 5;
 
 export default class GameEngine {
     private readonly canvasOrigin: { y: number; x: number };
@@ -101,7 +90,7 @@ export default class GameEngine {
      * @returns 作成されたグラフ
      */
     private createPlaneGraph(algo: PlaneGraphGenAlgo, canvas: HTMLCanvasElement, cntNode: number) {
-        let g: Graph;
+        let g: Graph | undefined = undefined;
         switch (algo) {
             case "LeftRight":
                 const gen1 = new LeftRightGen();
@@ -110,6 +99,8 @@ export default class GameEngine {
                 const gen2 = new DelaunayPlaneGraphGen();
                 g = gen2.create(canvas, cntNode);
         }
+
+        if (!g) throw Error("Unexpected Error!");
 
         // 交差点数が一定以上になるまで繰り返す
         // 一定以上繰り返されたら終了する
