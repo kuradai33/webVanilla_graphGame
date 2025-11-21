@@ -34,6 +34,11 @@ canvas {
     right: 10px;
 }
 
+#advence_continue {
+    background-color: rgb(238, 64, 46);
+    border: 0px solid #000;
+}
+
 /* タブラッパー */
 .mode-tabs-wrap {
     margin-top: .75rem;
@@ -144,35 +149,61 @@ canvas {
 }
 
 /* アクティブタブ */
-#resulttab_time:checked+label[for="resulttab_time"],
+#resulttab_time_easy:checked+label[for="resulttab_time_easy"],
+#resulttab_time_normal:checked+label[for="resulttab_time_normal"],
+#resulttab_time_hard:checked+label[for="resulttab_time_hard"],
 #resulttab_arcade:checked+label[for="resulttab_arcade"] {
     background: rgba(0, 229, 255, .7);
 }
 
-#panel_result_time,
+#panel_result_time_easy,
+#panel_result_time_normal,
+#panel_result_time_hard,
 #panel_result_arcade {
     border-top: 2px solid rgba(0, 229, 255, .7);
 }
 
 /* チェック状態に応じて表示切替（兄弟セレクタで制御） */
-#resulttab_time:checked~#panel_result_time {
+#resulttab_time_easy:checked~#panel_result_time_easy {
     display: block;
 }
-
-#resulttab_time:checked~#panel_result_arcade {
+#resulttab_time_easy:checked~#panel_result_time_normal,
+#resulttab_time_easy:checked~#panel_result_time_hard,
+#resulttab_time_easy:checked~#panel_result_arcade {
     display: none;
 }
 
-#resulttab_arcade:checked~#panel_result_time {
+#resulttab_time_normal:checked~#panel_result_time_normal {
+    display: block;
+}
+#resulttab_time_normal:checked~#panel_result_time_easy,
+#resulttab_time_normal:checked~#panel_result_time_hard,
+#resulttab_time_normal:checked~#panel_result_arcade {
+    display: none;
+}
+
+#resulttab_time_hard:checked~#panel_result_time_hard {
+    display: block;
+}
+#resulttab_time_hard:checked~#panel_result_time_easy,
+#resulttab_time_hard:checked~#panel_result_time_normal,
+#resulttab_time_hard:checked~#panel_result_arcade {
     display: none;
 }
 
 #resulttab_arcade:checked~#panel_result_arcade {
     display: block;
 }
+#resulttab_arcade:checked~#panel_result_time_easy,
+#resulttab_arcade:checked~#panel_result_time_normal,
+#resulttab_arcade:checked~#panel_result_time_hard {
+    display: none;
+}
 
 /* 初期：非表示→CSSで上書き */
-.result_metrics_arcade {
+#panel_result_time_normal,
+#panel_result_time_hard,
+#panel_result_arcade {
     display: none;
 }
 

@@ -1,5 +1,5 @@
 import { manager } from "../index";
-import { LEVELS, Levels, defaultTimeattackLevel } from "../define";
+import { Levels } from "../define";
 import Page from "./Page";
 import Resultpage from "./ResultPage";
 
@@ -12,7 +12,8 @@ export default class Titlepage extends Page {
     }
 
     override display(): void {
-        const gameMode = "arcade";
+        const gameMode = manager.state.settings.mode;
+        const timeattackLevel = manager.state.settings.timeattackLevel;
         this.root.innerHTML = `
             <section class="screen-title" data-screen>
                 <h1>Planarize!</h1>
@@ -23,12 +24,23 @@ export default class Titlepage extends Page {
 
                 <input id="switch_advance" aria-invalid="true" type="checkbox" role="switch"/>
 
-                <dialog id="modal_advance">
+                <!-- アドバンスモードモーダル -->
+                <dialog id="modal_advance_on">
+                    <article>
+                        <h2>Confirm</h2>
+                        <p>ブラウザにデータを保存しますか？</p>
+                        <footer>
+                            <button id="advence_yes">はい</button>
+                            <button id="advence_no" class="secondary">いいえ</button>
+                        </footer>
+                    </article>
+                </dialog>
+                <dialog id="modal_advance_off">
                     <article>
                         <h2>Warning!</h2>
                         <p>過去の結果データが削除されます。続けますか？</p>
                         <footer>
-                            <button id="advence_continue">続ける</button>
+                            <button id="advence_continue" class="pico-background-red-450">続ける</button>
                             <button id="advence_cancel" class="secondary">キャンセル</button>
                         </footer>
                     </article>
@@ -53,11 +65,15 @@ export default class Titlepage extends Page {
                                 <label for="level">
                                     レベル
                                     <select id="level_time" class="dropdown">
-                                        ${LEVELS.map(level => `
-                                            <option value="${level}" ${level == manager.state.settings.timeattackLevel ? "selected" : ""}>
-                                                ${level[0].toUpperCase()}${level.slice(1, level.length)}
-                                            </option>`).join("")
-                                        }
+                                        <option value="easy" ${manager.state.settings.timeattackLevel == "easy" ? "selected" : ""}>
+                                                イージー
+                                        </option>
+                                        <option value="normal" ${manager.state.settings.timeattackLevel == "normal" ? "selected" : ""}>
+                                                ノーマル
+                                        </option>
+                                        <option value="hard" ${manager.state.settings.timeattackLevel == "hard" ? "selected" : ""}>
+                                                ハード
+                                        </option>
                                     </select>
                                 </label>
                             </section>
@@ -77,7 +93,7 @@ export default class Titlepage extends Page {
                         </div>
                     </fieldset>
 
-                    <button type="button" id="btn_gamestart">ゲーム開始</button>
+                    <button type="button" id="btn_gamestart">スタート</button>
                 </form>
 
                 <!-- <details id="howto">
@@ -91,13 +107,19 @@ export default class Titlepage extends Page {
             <section class="screen-result">
                 <h2>結果</h2>
 
-                <input type="radio" id="resulttab_time" name="result" class="result-tab" ${manager.state.settings.mode == "timeattack" ? "checked" : ""}>
-                <label for="resulttab_time" role="tab" aria-controls="result_metrics" aria-selected="true">タイムアタック</label>
+                <input type="radio" id="resulttab_time_easy" name="result" class="result-tab" ${gameMode == "timeattack" && timeattackLevel == "easy" ? "checked" : ""}>
+                <label for="resulttab_time_easy" role="tab" aria-controls="result_metrics" aria-selected="true">タイムアタック［イージー］</label>
 
-                <input type="radio" id="resulttab_arcade" name="result" class="result-tab" ${manager.state.settings.mode == "arcade" ? "checked" : ""}>
+                <input type="radio" id="resulttab_time_normal" name="result" class="result-tab" ${gameMode == "timeattack" && timeattackLevel == "normal" ? "checked" : ""}>
+                <label for="resulttab_time_normal" role="tab" aria-controls="result_metrics" aria-selected="true">タイムアタック［ノーマル］</label>
+
+                <input type="radio" id="resulttab_time_hard" name="result" class="result-tab" ${gameMode == "timeattack" && timeattackLevel == "hard" ? "checked" : ""}>
+                <label for="resulttab_time_hard" role="tab" aria-controls="result_metrics" aria-selected="true">タイムアタック［ハード］</label>
+
+                <input type="radio" id="resulttab_arcade" name="result" class="result-tab" ${gameMode == "arcade" ? "checked" : ""}>
                 <label for="resulttab_arcade" role="tab" aria-controls="result_metrics_arcade" aria-selected="false">アーケード</label>
                 <!-- タイムアタックランキング -->
-                <section id="panel_result_time" role="tabpanel">
+                <section id="panel_result_time_easy" role="tabpanel">
                     <table class="result-metrics">
                         <thead>
                             <tr>
@@ -117,7 +139,55 @@ export default class Titlepage extends Page {
                             </tr>
                         </thead>
                         <tbody>
-                            ${Resultpage.createTimeattackResultHTML()}
+                            ${Resultpage.createTimeattackResultHTML("easy")}
+                        </tbody>
+                    </table>
+                </section>
+                <section id="panel_result_time_normal" role="tabpanel">
+                    <table class="result-metrics">
+                        <thead>
+                            <tr>
+                                <th>順位</th>
+                                <th>名前</th>
+                                <th colspan="6">タイム</th>
+                            </tr>
+                            <tr>
+                                <th></th>
+                                <th></th>
+                                <th>合計</th>
+                                <th>ラウンド１</th>
+                                <th>ラウンド２</th>
+                                <th>ラウンド３</th>
+                                <th>ラウンド４</th>
+                                <th>ラウンド５</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Resultpage.createTimeattackResultHTML("normal")}
+                        </tbody>
+                    </table>
+                </section>
+                <section id="panel_result_time_hard" role="tabpanel">
+                    <table class="result-metrics">
+                        <thead>
+                            <tr>
+                                <th>順位</th>
+                                <th>名前</th>
+                                <th colspan="6">タイム</th>
+                            </tr>
+                            <tr>
+                                <th></th>
+                                <th></th>
+                                <th>合計</th>
+                                <th>ラウンド１</th>
+                                <th>ラウンド２</th>
+                                <th>ラウンド３</th>
+                                <th>ラウンド４</th>
+                                <th>ラウンド５</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Resultpage.createTimeattackResultHTML("hard")}
                         </tbody>
                     </table>
                 </section>
@@ -139,37 +209,49 @@ export default class Titlepage extends Page {
                 </section>
             </section>`;
 
+        /* アドバンスモード */
         const switchAdvance = document.getElementById("switch_advance") as HTMLInputElement;
         if (manager.state.settings.advMode) switchAdvance.checked = true;
-        const advModal = document.getElementById("modal_advance") as HTMLDialogElement;
-        let isAdvanceMode = manager.state.settings.advMode;
+        const advModalOn = document.getElementById("modal_advance_on") as HTMLDialogElement;
+        const advModalOff = document.getElementById("modal_advance_off") as HTMLDialogElement;
         switchAdvance.addEventListener("change", () => {
-            if (switchAdvance.checked) {
-                if (!window.localStorage) {
-                    switchAdvance.checked = false;
-                    return;
-                }
-                isAdvanceMode = true;
-                window.localStorage.setItem("adv", "true");
+            if (switchAdvance.checked) advModalOn.open = true;
+            else advModalOff.open = true;
+        });
+
+        const btnAdvYes = document.getElementById("advence_yes") as HTMLButtonElement;
+        btnAdvYes.addEventListener("click", () => {
+            advModalOn.open = false;
+            if (!window.localStorage) {
+                switchAdvance.checked = false;
+                return;
             }
-            else advModal.open = true;
+            manager.state.settings.advMode = true;
+            window.localStorage.setItem("adv", "true");
+
+        });
+        const btnAdvNo = document.getElementById("advence_no") as HTMLButtonElement;
+        btnAdvNo.addEventListener("click", () => {
+            advModalOn.open = false;
+            switchAdvance.checked = false;
         });
 
         const btnAdvContinue = document.getElementById("advence_continue") as HTMLButtonElement;
         btnAdvContinue.addEventListener("click", () => {
-            advModal.open = false;
-            isAdvanceMode = false;
+            advModalOff.open = false;
+            manager.state.settings.advMode = false;
             window.localStorage.clear();
         });
         const btnAdvCancel = document.getElementById("advence_cancel") as HTMLButtonElement;
         btnAdvCancel.addEventListener("click", () => {
-            advModal.open = false;
+            advModalOff.open = false;
             switchAdvance.checked = true;
         });
 
+
         const displayLevel = document.getElementById("display_level") as HTMLParagraphElement;
         const levelArcade = document.getElementById("level_arcade") as HTMLInputElement;
-        levelArcade.addEventListener("change", () => {
+        levelArcade.addEventListener("input", () => {
             displayLevel.innerText = "レベル：" + levelArcade.value;
         });
 
@@ -185,7 +267,7 @@ export default class Titlepage extends Page {
             for (const ele of eles) {
                 if (ele.checked) {
                     switch (ele.value) {
-                        case "timeattack":
+                        case "time":
                             manager.state.settings.mode = "timeattack";
                             break;
                         case "arcade":

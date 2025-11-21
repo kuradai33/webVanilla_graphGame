@@ -1,3 +1,4 @@
+import { Levels } from "../define";
 import { manager } from "../index";
 import Page from "./Page";
 
@@ -40,7 +41,7 @@ export default class Resultpage extends Page {
                         </tr>
                     </thead>
                     <tbody>` +
-                        Resultpage.createTimeattackResultHTML() +
+                        Resultpage.createTimeattackResultHTML(manager.state.settings.timeattackLevel) +
                     `</tbody>
                 </table>` : ""}
 
@@ -86,8 +87,8 @@ export default class Resultpage extends Page {
         }
     }
 
-    public static createTimeattackResultHTML() {
-        const results = [...manager.state.resultsTimeattack].sort((resultX, resultY) => resultX.totalTimeMs - resultY.totalTimeMs);
+    public static createTimeattackResultHTML(level: Levels) {
+        const results = [...manager.state.resultsTimeattack[level]].sort((resultX, resultY) => resultX.totalTimeMs - resultY.totalTimeMs);
         const tbhtml = results.map((result, idx) => {
             let detailTime = "";
             const len = result.timeMsByRound.length;

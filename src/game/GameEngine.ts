@@ -227,7 +227,12 @@ export default class GameEngine {
         if (isLastRound) {
             // データ共有オブジェクトに時間を登録
             if (manager.state.settings.mode == "timeattack") {
-                manager.addTimeattackResult(manager.state.settings.name, time, this.resultTimeMsByRound);
+                manager.addTimeattackResult(
+                    manager.state.settings.timeattackLevel,
+                    manager.state.settings.name,
+                    time,
+                    this.resultTimeMsByRound
+                );
             }
             else if (manager.state.settings.mode == "arcade") {
                 manager.addArcadeResult(manager.state.settings.name, manager.state.settings.arcadeLevel, time);

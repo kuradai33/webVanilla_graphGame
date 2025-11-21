@@ -3,11 +3,16 @@ import Gamepage from "./GamePage";
 import Resultpage from "./ResultPage";
 import Page from "./Page";
 
-import { Levels, defaultTimeattackLevel } from "../define";
+import { Levels, DEFAULT_TIMEATTACK_LEVEL } from "../define";
 import { ReverseQueue } from "../util";
 
 type PageLabel = "title" | "game" | "result";
 type GameMode = "timeattack" | "arcade";
+type ResultTimeattack = {
+    "easy": { id: number; name: string; totalTimeMs: number; timeMsByRound: number[] }[];
+    "normal": { id: number; name: string; totalTimeMs: number; timeMsByRound: number[] }[];
+    "hard": { id: number; name: string; totalTimeMs: number; timeMsByRound: number[] }[];
+}
 
 export type AppState = {
     settings: { advMode: boolean; name: string; mode: GameMode; timeattackLevel: Levels; arcadeLevel: number };
@@ -17,19 +22,19 @@ export type AppState = {
      * @property name - プレイヤー名
      * @property timeMsByRound - ラウンド毎の終了時の現在時刻
      */
-    resultsTimeattack: { id: number; name: string; totalTimeMs: number; timeMsByRound: number[] }[];
+    resultsTimeattack: ResultTimeattack;
     resultsArcade: ReverseQueue<{ name: string; level: number; timeMs: number }>;
 };
 
 export default class PageManager {
-    private resultNextId = 1;
+    private resultNextId = {"easy": 1, "normal": 1, "hard": 1};
 
     /**
      * ページ間のデータ共有用オブジェクト
      */
     public state: AppState = {
-        settings: { advMode: false, name: "Player", mode: "timeattack", timeattackLevel: defaultTimeattackLevel, arcadeLevel: 5 },
-        resultsTimeattack: [],
+        settings: { advMode: false, name: "Player", mode: "timeattack", timeattackLevel: DEFAULT_TIMEATTACK_LEVEL, arcadeLevel: 5 },
+        resultsTimeattack: { "easy": [], "normal": [], "hard": [] },
         resultsArcade: new ReverseQueue(undefined, 50),
     };
 
@@ -66,14 +71,14 @@ export default class PageManager {
         this.curPage.display();
     }
 
-    public addTimeattackResult(name: string, totalTimeMs: number, timeMsByRound: number[]) {
-        this.state.resultsTimeattack.push({
-            id: this.resultNextId,
+    public addTimeattackResult(level: Levels, name: string, totalTimeMs: number, timeMsByRound: number[]) {
+        this.state.resultsTimeattack[level].push({
+            id: this.resultNextId[level],
             name: name,
             totalTimeMs: totalTimeMs,
             timeMsByRound: timeMsByRound,
         });
-        this.resultNextId++;
+        this.resultNextId[level]++;
     }
 
     public addArcadeResult(name: string, level: number, timeMs: number) {
