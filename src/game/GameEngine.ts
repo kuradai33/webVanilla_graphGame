@@ -1,5 +1,5 @@
 import { manager } from "../index";
-import { ANIMATION_FPS, MAX_ROUND, PlaneGraphGenAlgo } from "../define";
+import { ANIMATION_FPS, MAX_TIMEATTACK_ROUND, PlaneGraphGenAlgo, CNT_NODE_TIMEATTACK, CNT_NODE_ARCADE } from "../define";
 
 import { Graph } from "../graph/Graph";
 import LeftRightGen from "../graph/LeftRightGen";
@@ -75,46 +75,13 @@ export default class GameEngine {
                 this.opeg?.loop(time); // グラフを更新して描画
 
                 this.stopwatch?.draw(time); // タイマーを描画
-                this.renderRoundLamps.draw(time); // ランプを描画
+                if (manager.state.settings.mode == "timeattack") {
+                    this.renderRoundLamps.draw(time); // ランプを描画
+                }
             }
         );
 
         this.startGameRound();
-    }
-
-    /**
-     * 指定されたアルゴリズムを使用してグラフを作成する。
-     * @param algo - 使用するアルゴリズム
-     * @param ctx - グラフの描画先
-     * @param cntNode - グラフの頂点数
-     * @returns 作成されたグラフ
-     */
-    private createPlaneGraph(algo: PlaneGraphGenAlgo, canvas: HTMLCanvasElement, cntNode: number) {
-        let g: Graph | undefined = undefined;
-        switch (algo) {
-            case "LeftRight":
-                const gen1 = new LeftRightGen();
-                g = gen1.create(canvas, cntNode);
-            case "Delaunay":
-                const gen2 = new DelaunayPlaneGraphGen();
-                g = gen2.create(canvas, cntNode);
-        }
-
-        if (!g) throw Error("Unexpected Error!");
-
-        // 交差点数が一定以上になるまで繰り返す
-        // 一定以上繰り返されたら終了する
-        const MIN_CROSSED_POINTS = 3, MAX_LOOP = 100;
-        let cntLoop = 0;
-        while (g.culCntCrossedPoint() < MIN_CROSSED_POINTS && cntLoop < MAX_LOOP) {
-            for (const node of g.getNodes()) {
-                const x = Math.random() * 460 + 20;
-                const y = Math.random() * 460 + 20;
-                node.setPos(x, y);
-            }
-            cntLoop++;
-        }
-        return g;
     }
 
     /**
@@ -173,19 +140,64 @@ export default class GameEngine {
             this.events.push([domElement, event, func, null]);
         }
     }
-    
+
     /**
      * ラウンドの開始処理を行う。
      */
     private startGameRound() {
         // 初期描画
-        const cntNode = manager.state.settings.cntNode;
+        let cntNode = -1;
+        switch (manager.state.settings.mode) {
+            case "timeattack":
+                cntNode = CNT_NODE_TIMEATTACK[manager.state.settings.timeattackLevel][this.curRound];
+                break;
+            case "arcade":
+                cntNode = CNT_NODE_ARCADE[manager.state.settings.arcadeLevel];
+                break;
+        }
         const opeg = this.createPlaneGraph("Delaunay", this.canvas, cntNode); // 平面グラフを作成
 
         // キャンバスなどにマウスイベントを設定
         this.settingCanvasEvent(opeg);
 
         this.opeg = opeg;
+    }
+
+    /**
+     * 指定されたアルゴリズムを使用してグラフを作成する。
+     * @param algo - 使用するアルゴリズム
+     * @param ctx - グラフの描画先
+     * @param cntNode - グラフの頂点数
+     * @returns 作成されたグラフ
+     */
+    private createPlaneGraph(algo: PlaneGraphGenAlgo, canvas: HTMLCanvasElement, cntNode: number) {
+        if (cntNode <= 0) throw RangeError("不適切な値です");
+
+        let g: Graph | undefined = undefined;
+        switch (algo) {
+            case "LeftRight":
+                const gen1 = new LeftRightGen();
+                g = gen1.create(canvas, cntNode);
+            case "Delaunay":
+                const gen2 = new DelaunayPlaneGraphGen();
+                g = gen2.create(canvas, cntNode);
+        }
+
+        if (!g) throw Error("Unexpected Error!");
+
+        // 交差点数が一定以上になるまで繰り返す
+        // 一定以上繰り返されたら終了する
+        const MIN_CROSSED_POINTS = 3, MAX_LOOP = 100;
+        let cntLoop = 0;
+        while (g.culCntCrossedPoint() < MIN_CROSSED_POINTS && cntLoop < MAX_LOOP) {
+            for (const node of g.getNodes()) {
+                const x = Math.random() * 460 + 20;
+                const y = Math.random() * 460 + 20;
+                node.setPos(x, y);
+            }
+            cntLoop++;
+        }
+        return g;
     }
 
     /**
@@ -208,21 +220,29 @@ export default class GameEngine {
         this.prevRoundTimeMs = time;
         this.renderRoundLamps.setRound(this.curRound, time);
 
-        // 最終ラウンドではない
-        if (this.curRound < MAX_ROUND) {
-            this.startGameRound(); // グラフをリセット
-            this.curRound++;
-        }
+        const isLastRound =
+            (manager.state.settings.mode == "timeattack" && this.curRound == MAX_TIMEATTACK_ROUND) ||
+            (manager.state.settings.mode == "arcade");
         // 最終ラウンド
-        else {
+        if (isLastRound) {
             // データ共有オブジェクトに時間を登録
-            manager.addResult(manager.state.settings.name, time, this.resultTimeMsByRound);
+            if (manager.state.settings.mode == "timeattack") {
+                manager.addTimeattackResult(manager.state.settings.name, time, this.resultTimeMsByRound);
+            }
+            else if (manager.state.settings.mode == "arcade") {
+                manager.addArcadeResult(manager.state.settings.name, manager.state.settings.arcadeLevel, time);
+            }
 
             // アニメーションを停止
             this.timer?.abort();
 
             // タイトル画面に遷移
             manager.goto("result");
+        }
+        // 最終ラウンドではない
+        else {
+            this.startGameRound(); // グラフをリセット
+            this.curRound++;
         }
     }
 }

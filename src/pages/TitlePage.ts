@@ -1,6 +1,7 @@
 import { manager } from "../index";
-import { LEVELS, Levels, defaultLevel } from "../define";
+import { LEVELS, Levels, defaultTimeattackLevel } from "../define";
 import Page from "./Page";
+import Resultpage from "./ResultPage";
 
 /**
  * タイトル画面を表示する。
@@ -11,6 +12,7 @@ export default class Titlepage extends Page {
     }
 
     override display(): void {
+        const gameMode = "arcade";
         this.root.innerHTML = `
             <section class="screen-title" data-screen>
                 <h1>Planarize!</h1>
@@ -25,53 +27,139 @@ export default class Titlepage extends Page {
                             ニックネーム（10文字以内）
                             <input id="name" type="text" value="Player" maxlength="10" placeholder="ニックネームを入れてください">
                         </label>
-                        <label for="vcount">
-                            頂点数
-                            <input
-                                id="vcount"
-                                type="number"
-                                min="6"
-                                max="20"
-                                value="${manager ? manager.state.settings.cntNode : 10}"
-                                required
-                            />
-                        </label>
-                        <label for="level">
-                            難易度
-                            <select id="level" class="dropdown">
-                                ${LEVELS.map(level => `
-                                    <option value="${level}" ${level == defaultLevel ? "selected" : ""}>
-                                        ${level[0].toUpperCase()}${level.slice(1, level.length)}
-                                    </option>`).join("")
-                                }
-                            </select>
-                        </label>
+                        <div class="mode-tabs-wrap" role="tablist" aria-label="ゲームモード">
+                            <div class="mode-tabs">
+                                <input type="radio" id="tab_time" name="mode" class="mode-tab" value="time" ${manager.state.settings.mode == "timeattack" ? "checked" : ""}>
+                                <label for="tab_time" role="tab" aria-controls="panel_time" aria-selected="true">タイムアタック</label>
+
+                                <input type="radio" id="tab_arcade" name="mode" class="mode-tab" value="arcade" ${manager.state.settings.mode == "arcade" ? "checked" : ""}>
+                                <label for="tab_arcade" role="tab" aria-controls="panel_arcade" aria-selected="false">アーケード</label>
+                            </div>
+
+                            <section id="panel_time" role="tabpanel">
+                                <label for="level">
+                                    レベル
+                                    <select id="level_time" class="dropdown">
+                                        ${LEVELS.map(level => `
+                                            <option value="${level}" ${level == manager.state.settings.timeattackLevel ? "selected" : ""}>
+                                                ${level[0].toUpperCase()}${level.slice(1, level.length)}
+                                            </option>`).join("")
+            }
+                                    </select>
+                                </label>
+                            </section>
+                            <section id="panel_arcade" role="tabpanel">
+                                <label for="vcount">
+                                    <p id="display_level">レベル：${manager.state.settings.arcadeLevel}</p>
+                                    <input
+                                        id="level_arcade"
+                                        type="range"
+                                        min="1"
+                                        max="10"
+                                        value="${manager.state.settings.arcadeLevel}"
+                                        required
+                                    />
+                                </label>
+                            </section>
+                        </div>
                     </fieldset>
 
                     <button type="button" id="btn_gamestart">ゲーム開始</button>
                 </form>
 
-                <details id="howto">
+                <!-- <details id="howto">
                     <summary>遊び方</summary>
                     <ul>
                         <li>頂点をドラッグして位置を調整します。</li>
                         <li>辺どうしの交差数が <strong>0</strong> になればクリアです。</li>
                         <li>常に「元は平面的なグラフ」を使用しますが、配置を乱して開始します。</li>
                     </ul>
-                </details>
+                </details> -->
+            </section>
+            <section class="screen-result">
+                <h2>結果</h2>
+
+                <input type="radio" id="resulttab_time" name="result" class="result-tab" ${manager.state.settings.mode == "timeattack" ? "checked" : ""}>
+                <label for="resulttab_time" role="tab" aria-controls="result_metrics" aria-selected="true">タイムアタック</label>
+
+                <input type="radio" id="resulttab_arcade" name="result" class="result-tab" ${manager.state.settings.mode == "arcade" ? "checked" : ""}>
+                <label for="resulttab_arcade" role="tab" aria-controls="result_metrics_arcade" aria-selected="false">アーケード</label>
+                <!-- タイムアタックランキング -->
+                <section id="panel_result_time" role="tabpanel">
+                    <table class="result-metrics">
+                        <thead>
+                            <tr>
+                                <th>順位</th>
+                                <th>名前</th>
+                                <th colspan="6">タイム</th>
+                            </tr>
+                            <tr>
+                                <th></th>
+                                <th></th>
+                                <th>合計</th>
+                                <th>ラウンド１</th>
+                                <th>ラウンド２</th>
+                                <th>ラウンド３</th>
+                                <th>ラウンド４</th>
+                                <th>ラウンド５</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Resultpage.createTimeattackResultHTML()}
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- アーケード結果 -->
+                <section id="panel_result_arcade" role="tabpanel">
+                    <table class="result-metrics-arcade">
+                        <thead>
+                            <tr>
+                                <th>レベル</th>
+                                <th>名前</th>
+                                <th>タイム</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Resultpage.createArcadeResultHTML()}
+                        </tbody>
+                    </table>
+                </section>
             </section>`;
+
+        const displayLevel = document.getElementById("display_level") as HTMLParagraphElement;
+        const levelArcade = document.getElementById("level_arcade") as HTMLInputElement;
+        levelArcade.addEventListener("change", () => {
+            displayLevel.innerText = "レベル：" + levelArcade.value;
+        });
 
         const btnGamestart = document.getElementById("btn_gamestart") as HTMLButtonElement;
         btnGamestart.addEventListener("click", () => {
             // 頂点数をデータ共有オブジェクトに登録
-            const cntNode = Number((document.getElementById("vcount") as HTMLInputElement).value);
             const nickname = (document.getElementById("name") as HTMLInputElement).value;
-            const level = ((document.getElementById("level") as HTMLSelectElement).value) as Levels;
             if (nickname.length == 0) return; // ニックネームがない
+            const levelTime = ((document.getElementById("level_time") as HTMLSelectElement).value) as Levels;
+            const levelArcade = Number((document.getElementById("level_arcade") as HTMLSelectElement).value);
 
-            manager.state.settings.cntNode = cntNode;
+            const eles = document.getElementsByName("mode") as NodeListOf<HTMLInputElement>;;
+            for (const ele of eles) {
+                if (ele.checked) {
+                    switch (ele.value) {
+                        case "timeattack":
+                            manager.state.settings.mode = "timeattack";
+                            break;
+                        case "arcade":
+                            manager.state.settings.mode = "arcade";
+                            break;
+                    }
+                }
+            }
+
             manager.state.settings.name = nickname;
-            manager.state.settings.level = level;
+            manager.state.settings.timeattackLevel = levelTime;
+            manager.state.settings.arcadeLevel = levelArcade;
+
+
             // ゲーム画面に遷移
             manager.goto("game");
         });

@@ -10,17 +10,18 @@ export default class Resultpage extends Page {
     }
 
     override display(): void {
+        const gameMode = manager.state.settings.mode;
         this.root.innerHTML = `
             <section class="screen-result">
                 <h2>結果</h2>
 
                 <!-- 概要カード -->
                 <!-- <article id="result-summary" aria-busy="true">
-                    <!-- タイトル・要約などを動的に挿入 -->
+                    タイトル・要約などを動的に挿入
                 </article> -->
 
-                <!-- メトリクス（任意数のKPIを自由に表示） -->
-                <table id="result_metrics">
+                <!-- タイムアタックランキング -->
+                ${gameMode == "timeattack" ? `<table class="result-metrics">
                     <thead>
                         <tr>
                             <th>順位</th>
@@ -38,29 +39,24 @@ export default class Resultpage extends Page {
                             <th>ラウンド５</th>
                         </tr>
                     </thead>
-                    <tbody id="result_metrics_body">
+                    <tbody>` +
+                        Resultpage.createTimeattackResultHTML() +
+                    `</tbody>
+                </table>` : ""}
+
+                <!-- アーケード結果 -->
+                ${gameMode == "arcade" ? `<table id="result_metrics_arcade">
+                    <thead>
                         <tr>
-                            <td>1</td>
-                            <td>hoge</td>
-                            <td>5:00.00</td>
-                            <td>1:00.00</td>
-                            <td>1:00.00</td>
-                            <td>1:00.00</td>
-                            <td>1:00.00</td>
-                            <td>1:00.00</td>
+                            <th>レベル</th>
+                            <th>名前</th>
+                            <th>タイム</th>
                         </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>hoge2</td>
-                            <td>10:00.00</td>
-                            <td>2:00.00</td>
-                            <td>2:00.00</td>
-                            <td>2:00.00</td>
-                            <td>2:00.00</td>
-                            <td>2:00.00</td>
-                        </tr>
-                    </tbody>
-                </table>
+                    </thead>
+                    <tbody id="result_metrics_arcade_body">` +
+                        Resultpage.createArcadeResultHTML() +
+                    `</tbody>
+                </table>` : ""}
 
                 <footer style="margin-top:1rem;">
                     <button type="button" id="btn_retry">もう一度</button>
@@ -81,8 +77,10 @@ export default class Resultpage extends Page {
         };
         const btnBackTitle = document.getElementById("btn_backtitle") as HTMLButtonElement;
         btnBackTitle.addEventListener("click", actionBackTitle);
+    }
 
-        const results = [...manager.state.results].sort((resultX, resultY) => resultX.totalTimeMs - resultY.totalTimeMs);
+    public static createTimeattackResultHTML() {
+        const results = [...manager.state.resultsTimeattack].sort((resultX, resultY) => resultX.totalTimeMs - resultY.totalTimeMs);
         const tbhtml = results.map((result, idx) => {
             let detailTime = "";
             const len = result.timeMsByRound.length;
@@ -90,14 +88,27 @@ export default class Resultpage extends Page {
                 detailTime += `<td>${i < len ? Resultpage.format(result.timeMsByRound[i]) : ""}</td>`;
             }
             return `<tr ${result.id == results.length ? "style='background: rgba(160, 240, 255, 0.28);'" : ""}>` +
-                    `<td>${idx + 1}</td>` +
-                    `<td>${result.name}</td>` +
-                    `<td>${Resultpage.format(result.totalTimeMs)}</td>` +
-                    `${detailTime}` +
+                `<td>${idx + 1}</td>` +
+                `<td>${result.name}</td>` +
+                `<td>${Resultpage.format(result.totalTimeMs)}</td>` +
+                `${detailTime}` +
                 `</tr>`;
         });
-        const resultTableBody = document.getElementById("result_metrics_body") as HTMLTableElement;
-        resultTableBody.innerHTML = tbhtml.join("");
+        return tbhtml.join("");
+    }
+
+    public static createArcadeResultHTML() {
+        const results = manager.state.resultsArcade.reverse();
+        const tbhtml = results.map((result, idx) => {
+            return `<tr ${idx == 0 ? "style='background: rgba(160, 240, 255, 0.28);'" : ""}>` +
+                `<td>${result.level}</td>` +
+                `<td>${result.name}</td>` +
+                `<td>${Resultpage.format(result.timeMs)}</td>` +
+                `</tr>`;
+        });
+        
+        manager.state.resultsArcade.reverse();
+        return tbhtml.join("");
     }
 
     static format(elapsedMs: number): string {

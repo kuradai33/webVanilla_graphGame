@@ -1,12 +1,12 @@
 import PageManager from "./pages/PageManager";
 
 const page = document.getElementById("page") as HTMLElement;
-export const manager = new PageManager(page, "title");
+export const manager = new PageManager(page);
 
 // ページ読み込み時の処理
-// document.addEventListener("DOMContentLoaded", () => {
-
-// });
+document.addEventListener("DOMContentLoaded", () => {
+    manager.goto("title");
+});
 
 function switchLightDarkMode() {
     const mode = document.documentElement.getAttribute("data-theme") || "light";

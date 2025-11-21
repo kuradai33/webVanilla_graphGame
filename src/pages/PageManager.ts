@@ -3,19 +3,22 @@ import Gamepage from "./GamePage";
 import Resultpage from "./ResultPage";
 import Page from "./Page";
 
-import { Levels } from "../define";
+import { Levels, defaultTimeattackLevel } from "../define";
+import { manager } from "..";
 
 type PageLabel = "title" | "game" | "result";
+type GameMode = "timeattack" | "arcade";
 
 export type AppState = {
-    settings: { cntNode: number; name: string; level: Levels };
+    settings: { name: string; mode: GameMode; timeattackLevel: Levels; arcadeLevel: number };
     /**
      * ゲームの結果
      * @property id
      * @property name - プレイヤー名
      * @property timeMsByRound - ラウンド毎の終了時の現在時刻
      */
-    results: { id: number; name: string, totalTimeMs: number; timeMsByRound: number[] }[];
+    resultsTimeattack: { id: number; name: string; totalTimeMs: number; timeMsByRound: number[] }[];
+    resultsArcade: { name: string; level: number; timeMs: number }[];
 };
 
 export default class PageManager {
@@ -25,8 +28,9 @@ export default class PageManager {
      * ページ間のデータ共有用オブジェクト
      */
     public state: AppState = {
-        settings: { cntNode: 10, name: "Player", level: "normal" },
-        results: [],
+        settings: { name: "Player", mode: "timeattack", timeattackLevel: defaultTimeattackLevel, arcadeLevel: 5 },
+        resultsTimeattack: [],
+        resultsArcade: [],
     };
 
     /**
@@ -39,10 +43,8 @@ export default class PageManager {
      * @param root - ページを描画するルートとなるHTML要素
      * @param [initPage] - 初期ページ
      */
-    constructor(private root: HTMLElement, initPage?: PageLabel) {
+    constructor(private root: HTMLElement) {
         this.curPage = new Page(root);
-        
-        if (initPage) this.goto(initPage);
     }
 
     /**
@@ -64,13 +66,21 @@ export default class PageManager {
         this.curPage.display();
     }
 
-    public addResult(name: string, totalTimeMs: number, timeMsByRound: number[]) {
-        this.state.results.push({
+    public addTimeattackResult(name: string, totalTimeMs: number, timeMsByRound: number[]) {
+        this.state.resultsTimeattack.push({
             id: this.resultNextId,
             name: name,
             totalTimeMs: totalTimeMs,
             timeMsByRound: timeMsByRound,
         });
         this.resultNextId++;
+    }
+
+    public addArcadeResult(name: string, level: number, timeMs: number) {
+        this.state.resultsArcade.push({
+            name: name,
+            level: level,
+            timeMs: timeMs,
+        });
     }
 };

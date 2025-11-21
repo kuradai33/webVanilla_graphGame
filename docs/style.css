@@ -5,7 +5,8 @@
     /* OTFファイルへのパス */
 }
 
-body, html {
+body,
+html {
     height: 100%;
     background: #17191c;
 }
@@ -16,6 +17,7 @@ canvas {
     /* border-radius: 8px;      角を少し丸める（オプション） */
 }
 
+/* --- タイトル画面 --- */
 .screen-title {
     max-width: 600px;
     margin: clamp(1rem, 4vh, 2rem) auto;
@@ -23,12 +25,156 @@ canvas {
     border-radius: var(--pico-border-radius, 12px);
     border: 1px solid var(--pico-muted-border-color, rgba(0, 0, 0, 0.12));
     box-shadow: var(--pico-shadow, 0 6px 20px rgba(0, 0, 0, 0.06));
-    background: var(--panel-bg, #f5f5f5);
+    background: var(--panel-bg, #17191c);
 }
 
+/* タブラッパー */
+.mode-tabs-wrap {
+    margin-top: .75rem;
+    border-bottom: 2px solid rgba(160, 240, 255, .25);
+    position: relative;
+    padding-top: .25rem;
+}
+
+.mode-tabs {
+    display: flex;
+}
+
+/* ラジオは非表示（CSSタブ用） */
+.mode-tab {
+    display: none;
+}
+
+/* タブラベル（ボタン風） */
+.mode-tabs>label[for^="tab_"] {
+    display: block;
+    width: 50%;
+    padding: .5rem .9rem;
+    margin: 0;
+    background: rgba(0, 229, 255, .1);
+    color: #e8f6ff;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.mode-tabs>label[for^="tab_"]:hover {
+    opacity: 0.85;
+}
+
+.mode-tabs>label[for="tab_time"] {
+    border-radius: .6rem 0 0 0;
+}
+
+.mode-tabs>label[for="tab_arcade"] {
+    border-radius: 0 .6rem 0 0;
+}
+
+/* アクティブタブ */
+#tab_time:checked+label[for="tab_time"],
+#tab_arcade:checked+label[for="tab_arcade"] {
+    background: rgba(0, 229, 255, .7);
+}
+
+/* パネルの基本 */
+#panel_time,
+#panel_arcade {
+    padding: .75rem .2rem .5rem;
+    border-radius: 0 0 .6rem .6rem;
+}
+
+/* チェック状態に応じて表示切替（兄弟セレクタで制御） */
+.mode-tabs:has(#tab_time:checked)~#panel_time {
+    display: block;
+}
+
+.mode-tabs:has(#tab_time:checked)~#panel_arcade {
+    display: none;
+}
+
+.mode-tabs:has(#tab_arcade:checked)~#panel_time {
+    display: none;
+}
+
+.mode-tabs:has(#tab_arcade:checked)~#panel_arcade {
+    display: block;
+}
+
+/* 初期：非表示→CSSで上書き */
+#panel_arcade {
+    display: none;
+}
+
+/* フィールドセットのHUD調 */
+#panel_time,
+#panel_arcade {
+    border: 2px solid rgb(0, 229, 255);
+}
+
+
+/* ラジオは非表示（CSSタブ用） */
+.result-tab {
+    display: none;
+}
+
+/* タブラベル（ボタン風） */
+.screen-result>label[for^="resulttab_"] {
+    display: inline-block;
+    padding: .5rem .9rem;
+    margin: 0;
+    background: rgba(0, 229, 255, .1);
+    color: #e8f6ff;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.screen-result>label[for^="resulttab_"]:hover {
+    opacity: 0.85;
+}
+
+.screen-result>label[for^="resulttab_"] {
+    border-radius: .6rem .6rem 0 0;
+}
+
+/* アクティブタブ */
+#resulttab_time:checked+label[for="resulttab_time"],
+#resulttab_arcade:checked+label[for="resulttab_arcade"] {
+    background: rgba(0, 229, 255, .7);
+}
+
+/* チェック状態に応じて表示切替（兄弟セレクタで制御） */
+#resulttab_time:checked~#panel_result_time {
+    display: block;
+}
+
+#resulttab_time:checked~#panel_result_arcade {
+    display: none;
+}
+
+#resulttab_arcade:checked~#panel_result_time {
+    display: none;
+}
+
+#resulttab_arcade:checked~#panel_result_arcade {
+    display: block;
+}
+
+/* 初期：非表示→CSSで上書き */
+.result_metrics_arcade {
+    display: none;
+}
+
+/* --- ゲーム画面 --- */
 .screen-game {
     background: #17191c;
 }
+
+#game_playground {
+    margin: clamp(1rem, 4vh, 2rem) auto;
+}
+
+/* --- 結果画面 --- */
 
 .screen-result {
     margin: clamp(1rem, 4vh, 2rem) auto;
@@ -39,8 +185,8 @@ canvas {
     background: #17191c;
 }
 
-/* Result table (dark / HUD-like) */
-#result_metrics {
+/* 結果表（タイトル,結果画面） */
+.result-metrics {
     /* セルの境界を個別に制御 */
     border-radius: 10px;
     border-collapse: separate;
@@ -58,8 +204,8 @@ canvas {
 }
 
 /* セルの基本パディング（Picoのデフォに近いが少し詰める） */
-#result_metrics th,
-#result_metrics td {
+.result-metrics th,
+.result-metrics td {
     padding: 0.6rem 0.8rem;
     vertical-align: middle;
     /* タイムを折返さない */
@@ -71,14 +217,14 @@ canvas {
 }
 
 /* ヘッダーの見た目 */
-#result_metrics thead tr:first-child th {
+.result-metrics thead tr:first-child th {
     text-align: center;
     background: var(--rm-head-bg);
     /* 見出し1行目の下：細い線 */
     border-bottom: 1px solid var(--rm-border);
 }
 
-#result_metrics thead tr:nth-child(2) th {
+.result-metrics thead tr:nth-child(2) th {
     text-align: center;
     background: var(--rm-head-bg);
     /* 見出し2行目の下：太い線 */
@@ -86,8 +232,8 @@ canvas {
 }
 
 /* 縦の区切り：合計列（3列目）の「次」、つまり 4列目に縦線 */
-#result_metrics thead tr:nth-child(2) th:nth-child(4),
-#result_metrics tbody td:nth-child(4) {
+.result-metrics thead tr:nth-child(2) th:nth-child(4),
+.result-metrics tbody td:nth-child(4) {
     border-left: 2px solid var(--rm-border-strong);
 }
 
@@ -97,40 +243,127 @@ canvas {
    - 1列目（順位）は中央
    - それ以外は左寄せ
 */
-#result_metrics thead th {
-    text-align: center;                                       
+.result-metrics thead th {
+    text-align: center;
 }
 
-#result_metrics tbody td:first-child {
+.result-metrics thead tr:nth-child(2) th:first-child {
     width: 100px;
     text-align: center;
 }
 
-#result_metrics tbody td:nth-child(2) {
+.result-metrics thead tr:nth-child(2) th:nth-child(3),
+.result-metrics thead tr:nth-child(2) th:nth-child(4),
+.result-metrics thead tr:nth-child(2) th:nth-child(5),
+.result-metrics thead tr:nth-child(2) th:nth-child(6),
+.result-metrics thead tr:nth-child(2) th:nth-child(7),
+.result-metrics thead tr:nth-child(2) th:nth-child(8) {
+    width: 150px;
+}
+
+.result-metrics tbody td:first-child {
+    text-align: center;
+}
+
+.result-metrics tbody td:nth-child(2) {
     text-align: left;
 }
 
-#result_metrics tbody td:nth-child(3),
-#result_metrics tbody td:nth-child(4),
-#result_metrics tbody td:nth-child(5),
-#result_metrics tbody td:nth-child(6),
-#result_metrics tbody td:nth-child(7),
-#result_metrics tbody td:nth-child(8) {
-    width: 150px;
+.result-metrics tbody td:nth-child(3),
+.result-metrics tbody td:nth-child(4),
+.result-metrics tbody td:nth-child(5),
+.result-metrics tbody td:nth-child(6),
+.result-metrics tbody td:nth-child(7),
+.result-metrics tbody td:nth-child(8) {
     text-align: right;
     padding-right: 38px;
 }
 
 /* ゼブラストライプ（行の視認性） */
-#result_metrics tbody tr:nth-child(odd) {
+.result-metrics tbody tr:nth-child(odd) {
     background: var(--rm-row-odd);
 }
 
-#result_metrics tbody tr:nth-child(even) {
+.result-metrics tbody tr:nth-child(even) {
     background: var(--rm-row-even);
 }
 
 /* 行と最終行のボーダー（控えめ） */
-#result_metrics tbody tr:last-child td {
+.result-metrics tbody tr:last-child td {
+    border-bottom: 1px solid var(--rm-border);
+}
+
+.result-metrics-arcade {
+    /* セルの境界を個別に制御 */
+    border-radius: 10px;
+    border-collapse: separate;
+    border-spacing: 0;
+    --rm-bg: rgba(10, 15, 26, 0.35);
+    --rm-row-odd: rgba(255, 255, 255, 0.02);
+    --rm-row-even: rgba(255, 255, 255, 0.06);
+    --rm-text: #e8f6ff;
+    /* 細線 */
+    --rm-border: rgba(160, 240, 255, 0.28);
+    /* 太線/縦線 */
+    --rm-border-strong: rgba(160, 240, 255, 0.6);
+    --rm-head-bg: rgba(0, 229, 255, 0.06);
+    overflow: hidden;
+}
+
+/* セルの基本パディング（Picoのデフォに近いが少し詰める） */
+.result-metrics-arcade th,
+.result-metrics-arcade td {
+    padding: 0.6rem 0.8rem;
+    vertical-align: middle;
+    /* タイムを折返さない */
+    white-space: nowrap;
+    /* 数字を等幅寄りに */
+    font-variant-numeric: tabular-nums;
+    background: var(--rm-bg);
+    color: var(--rm-text);
+}
+
+/* ヘッダーの見た目 */
+.result-metrics-arcade thead th {
+    text-align: center;
+    background: var(--rm-head-bg);
+    /* 見出し1行目の下：細い線 */
+    border-bottom: 2px solid var(--rm-border-strong);
+}
+
+/* 幅を指定 */
+/* アラインメント指定：
+   - 見出しは中央
+   - 1列目（順位）は中央
+   - それ以外は左寄せ
+*/
+.result-metrics-arcade thead th {
+    text-align: center;
+}
+
+.result-metrics-arcade thead th:first-child {
+    width: 300px;
+    text-align: center;
+}
+
+.result-metrics-arcade thead th:nth-child(3) {
+    width: 450px;
+}
+
+.result-metrics-arcade tbody td {
+    text-align: center;
+}
+
+/* ゼブラストライプ（行の視認性） */
+.result-metrics-arcade tbody tr:nth-child(odd) {
+    background: var(--rm-row-odd);
+}
+
+.result-metrics-arcade tbody tr:nth-child(even) {
+    background: var(--rm-row-even);
+}
+
+/* 行と最終行のボーダー（控えめ） */
+.result-metrics-arcade tbody tr:last-child td {
     border-bottom: 1px solid var(--rm-border);
 }
