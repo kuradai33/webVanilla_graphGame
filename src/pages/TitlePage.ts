@@ -18,8 +18,21 @@ export default class Titlepage extends Page {
                 <h1>Planarize!</h1>
                 <p>
                     ランダムに生成された <strong>平面的グラフ</strong> を乱した配置から開始します。<br />
-                    頂点をドラッグして <em>辺の交差をなくす</em> ことを目指しましょう。
+                    ノードをドラッグして <strong>辺の交差をなくす</strong> ことを目指しましょう。
                 </p>
+
+                <input id="switch_advance" aria-invalid="true" type="checkbox" role="switch"/>
+
+                <dialog id="modal_advance">
+                    <article>
+                        <h2>Warning!</h2>
+                        <p>過去の結果データが削除されます。続けますか？</p>
+                        <footer>
+                            <button id="advence_continue">続ける</button>
+                            <button id="advence_cancel" class="secondary">キャンセル</button>
+                        </footer>
+                    </article>
+                </dialog>
 
                 <form id="title-form" autocomplete="off">
                     <fieldset>
@@ -44,7 +57,7 @@ export default class Titlepage extends Page {
                                             <option value="${level}" ${level == manager.state.settings.timeattackLevel ? "selected" : ""}>
                                                 ${level[0].toUpperCase()}${level.slice(1, level.length)}
                                             </option>`).join("")
-            }
+                                        }
                                     </select>
                                 </label>
                             </section>
@@ -70,9 +83,8 @@ export default class Titlepage extends Page {
                 <!-- <details id="howto">
                     <summary>遊び方</summary>
                     <ul>
-                        <li>頂点をドラッグして位置を調整します。</li>
-                        <li>辺どうしの交差数が <strong>0</strong> になればクリアです。</li>
-                        <li>常に「元は平面的なグラフ」を使用しますが、配置を乱して開始します。</li>
+                        <li>ノードをドラッグして位置を調整します。</li>
+                        <li>レーザーどうしの交差数が <strong>0</strong> になればクリア！</li>
                     </ul>
                 </details> -->
             </section>
@@ -126,6 +138,34 @@ export default class Titlepage extends Page {
                     </table>
                 </section>
             </section>`;
+
+        const switchAdvance = document.getElementById("switch_advance") as HTMLInputElement;
+        if (manager.state.settings.advMode) switchAdvance.checked = true;
+        const advModal = document.getElementById("modal_advance") as HTMLDialogElement;
+        let isAdvanceMode = manager.state.settings.advMode;
+        switchAdvance.addEventListener("change", () => {
+            if (switchAdvance.checked) {
+                if (!window.localStorage) {
+                    switchAdvance.checked = false;
+                    return;
+                }
+                isAdvanceMode = true;
+                window.localStorage.setItem("adv", "true");
+            }
+            else advModal.open = true;
+        });
+
+        const btnAdvContinue = document.getElementById("advence_continue") as HTMLButtonElement;
+        btnAdvContinue.addEventListener("click", () => {
+            advModal.open = false;
+            isAdvanceMode = false;
+            window.localStorage.clear();
+        });
+        const btnAdvCancel = document.getElementById("advence_cancel") as HTMLButtonElement;
+        btnAdvCancel.addEventListener("click", () => {
+            advModal.open = false;
+            switchAdvance.checked = true;
+        });
 
         const displayLevel = document.getElementById("display_level") as HTMLParagraphElement;
         const levelArcade = document.getElementById("level_arcade") as HTMLInputElement;

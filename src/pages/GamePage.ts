@@ -46,9 +46,10 @@ export default class Gamepage extends Page {
     override display(): void {
         this.root.innerHTML = `
             <section class="screen-game">
-                <h1>Graph to Plain!</h1>
-                <canvas id="game_playground"></canvas>
-                <p id="info"></p>
+                <div>
+                    <h1>Planarize!</h1>
+                    <canvas id="game_playground"></canvas>
+                </div>
             </section>`;
 
         this.gameScreen = document.getElementById("game_playground") as HTMLCanvasElement;

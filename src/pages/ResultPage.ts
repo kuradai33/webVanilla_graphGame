@@ -77,6 +77,13 @@ export default class Resultpage extends Page {
         };
         const btnBackTitle = document.getElementById("btn_backtitle") as HTMLButtonElement;
         btnBackTitle.addEventListener("click", actionBackTitle);
+
+        if (manager.state.settings.advMode) {
+            // ストレージに保存
+            if (!window.localStorage) return;
+            window.localStorage.setItem("resultsTime", JSON.stringify(manager.state.resultsTimeattack));
+            window.localStorage.setItem("resultsArcade", JSON.stringify(manager.state.resultsArcade));
+        }
     }
 
     public static createTimeattackResultHTML() {
@@ -98,16 +105,14 @@ export default class Resultpage extends Page {
     }
 
     public static createArcadeResultHTML() {
-        const results = manager.state.resultsArcade.reverse();
-        const tbhtml = results.map((result, idx) => {
+        const results = manager.state.resultsArcade;
+        const tbhtml = results.range().map((result, idx) => {
             return `<tr ${idx == 0 ? "style='background: rgba(160, 240, 255, 0.28);'" : ""}>` +
                 `<td>${result.level}</td>` +
                 `<td>${result.name}</td>` +
                 `<td>${Resultpage.format(result.timeMs)}</td>` +
                 `</tr>`;
         });
-        
-        manager.state.resultsArcade.reverse();
         return tbhtml.join("");
     }
 

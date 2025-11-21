@@ -28,6 +28,12 @@ canvas {
     background: var(--panel-bg, #17191c);
 }
 
+#switch_advance {
+    position: absolute;
+    top: 20px;
+    right: 10px;
+}
+
 /* タブラッパー */
 .mode-tabs-wrap {
     margin-top: .75rem;
@@ -143,6 +149,11 @@ canvas {
     background: rgba(0, 229, 255, .7);
 }
 
+#panel_result_time,
+#panel_result_arcade {
+    border-top: 2px solid rgba(0, 229, 255, .7);
+}
+
 /* チェック状態に応じて表示切替（兄弟セレクタで制御） */
 #resulttab_time:checked~#panel_result_time {
     display: block;
@@ -168,10 +179,8 @@ canvas {
 /* --- ゲーム画面 --- */
 .screen-game {
     background: #17191c;
-}
-
-#game_playground {
-    margin: clamp(1rem, 4vh, 2rem) auto;
+    display: flex;
+    justify-content: center;
 }
 
 /* --- 結果画面 --- */

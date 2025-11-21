@@ -4,13 +4,13 @@ import Resultpage from "./ResultPage";
 import Page from "./Page";
 
 import { Levels, defaultTimeattackLevel } from "../define";
-import { manager } from "..";
+import { ReverseQueue } from "../util";
 
 type PageLabel = "title" | "game" | "result";
 type GameMode = "timeattack" | "arcade";
 
 export type AppState = {
-    settings: { name: string; mode: GameMode; timeattackLevel: Levels; arcadeLevel: number };
+    settings: { advMode: boolean; name: string; mode: GameMode; timeattackLevel: Levels; arcadeLevel: number };
     /**
      * ゲームの結果
      * @property id
@@ -18,7 +18,7 @@ export type AppState = {
      * @property timeMsByRound - ラウンド毎の終了時の現在時刻
      */
     resultsTimeattack: { id: number; name: string; totalTimeMs: number; timeMsByRound: number[] }[];
-    resultsArcade: { name: string; level: number; timeMs: number }[];
+    resultsArcade: ReverseQueue<{ name: string; level: number; timeMs: number }>;
 };
 
 export default class PageManager {
@@ -28,9 +28,9 @@ export default class PageManager {
      * ページ間のデータ共有用オブジェクト
      */
     public state: AppState = {
-        settings: { name: "Player", mode: "timeattack", timeattackLevel: defaultTimeattackLevel, arcadeLevel: 5 },
+        settings: { advMode: false, name: "Player", mode: "timeattack", timeattackLevel: defaultTimeattackLevel, arcadeLevel: 5 },
         resultsTimeattack: [],
-        resultsArcade: [],
+        resultsArcade: new ReverseQueue(undefined, 50),
     };
 
     /**
