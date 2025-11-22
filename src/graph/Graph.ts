@@ -6,7 +6,7 @@ import { SparkRenderer } from "../render/spark";
  */
 class Shape {
     /** 図形の描画を行うメソッド（オーバーライド前提） */
-    public loop(time: number): void { };
+    public loop(time: number): void {};
 }
 
 type NodeStatus = "normal" | "hover" | "drag";
@@ -413,6 +413,16 @@ export class Graph {
     private graphEdges: GraphEdge[] = [];
     private ctx: CanvasRenderingContext2D;
 
+    private _recordStep: {node: GraphNode; x: number; y: number }[] = [];
+
+    // setNodePosメソッド用
+    private mouseStartX: number = 0;
+    private mouseStartY: number = 0;
+    private nodeStartX: number = 0;
+    private nodeStartY: number = 0;
+    private operatedNode: GraphNode | null = null;
+    private isDrag = false;
+
     private readonly spackRenderer = new SparkRenderer();
     private readonly canvasSize: { h: number; w: number };
 
@@ -449,12 +459,6 @@ export class Graph {
         else if (e instanceof GraphEdge) this.graphEdges.push(e);
     }
 
-    private mouseStartX: number = 0;
-    private mouseStartY: number = 0;
-    private nodeStartX: number = 0;
-    private nodeStartY: number = 0;
-    private operatedNode: GraphNode | null = null;
-    private isDrag = false;
     /**
      * 
      * @param mouseStatus 
@@ -500,6 +504,13 @@ export class Graph {
                 if(!this.isDrag) return;
                 if (this.operatedNode) this.operatedNode.status = "normal";
                 this.isDrag = false;
+                if (this.operatedNode) {
+                    this._recordStep.push({
+                        node: this.operatedNode,
+                        x: this.nodeStartX,
+                        y: this.nodeStartY,
+                    });
+                }
                 break;
         }
     }
@@ -629,10 +640,8 @@ export class Graph {
         return closest_node;
     }
 
-    /**
-     * グラフクリア時の描画処理を行う。
-     */
-    public drawClearedGraph() {
-        console.log("fin");
+    public backOneStep() {
+        const step = this._recordStep.pop();
+        if(step) step.node.setPos(step.x, step.y);
     }
 };

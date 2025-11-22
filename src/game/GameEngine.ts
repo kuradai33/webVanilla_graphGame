@@ -80,7 +80,7 @@ export default class GameEngine {
                 }
             }
         );
-
+        this.timer.start();
         this.startGameRound();
     }
 
@@ -207,8 +207,6 @@ export default class GameEngine {
         // イベントリスナを削除
         this.controller?.abort();
 
-        this.opeg?.drawClearedGraph();
-
         // 登録されているすべてのイベントを削除
         for (const eventInfo of this.events) {
             if (eventInfo[3]) eventInfo[0].removeEventListener(eventInfo[1], eventInfo[2], eventInfo[3]);
@@ -239,7 +237,7 @@ export default class GameEngine {
             }
 
             // アニメーションを停止
-            this.timer?.abort();
+            this.timer?.stop();
 
             // タイトル画面に遷移
             manager.goto("result");
@@ -249,5 +247,17 @@ export default class GameEngine {
             this.startGameRound(); // グラフをリセット
             this.curRound++;
         }
+    }
+
+    public startTimer() {
+        this.timer.start();
+    }
+
+    public stopTimer() {
+        this.timer.stop();
+    }
+
+    public backOneStep() {
+        this.opeg?.backOneStep();
     }
 }

@@ -214,6 +214,19 @@ canvas {
     justify-content: center;
 }
 
+.game-button {
+    padding: 0px;
+    height: 20px;
+    width: 20px;
+    background-color: rgba(0, 229, 255, .4);
+    border-width: 0px;
+    font-size: 10px;
+}
+
+.game-button:hover {
+    background-color: rgba(0, 229, 255, .3);
+}
+
 /* --- 結果画面 --- */
 
 .screen-result {
