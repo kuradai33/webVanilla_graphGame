@@ -50,7 +50,7 @@ export default class Titlepage extends Page {
                     <fieldset>
                         <label for="name">
                             ニックネーム（10文字以内）
-                            <input id="name" type="text" value="Player" maxlength="10" placeholder="ニックネームを入れてください">
+                            <input id="name" type="text" value=${manager.state.settings.name} maxlength="10" placeholder="ニックネームを入れてください">
                         </label>
                         <div class="mode-tabs-wrap" role="tablist" aria-label="ゲームモード">
                             <div class="mode-tabs">
