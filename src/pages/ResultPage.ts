@@ -12,14 +12,16 @@ export default class Resultpage extends Page {
 
     override display(): void {
         const gameMode = manager.state.settings.mode;
+        const latestTimeattackResultTime = manager.state.resultsTimeattack[manager.state.settings.timeattackLevel][Math.min(manager.state.resultsTimeattack[manager.state.settings.timeattackLevel].length - 1, 0)].totalTimeMs;
+        const latestArcadeResultTime = manager.state.resultsArcade.back()?.timeMs;
         this.root.innerHTML = `
             <section class="screen-result">
                 <h2>結果</h2>
 
                 <!-- 概要カード -->
-                <!-- <article id="result-summary" aria-busy="true">
-                    タイトル・要約などを動的に挿入
-                </article> -->
+                <article id="result-summary">
+                    <h4>タイム: ${Resultpage.format(gameMode == "timeattack" ? latestTimeattackResultTime : latestArcadeResultTime || 0)}</h4>
+                </article>
 
                 <!-- タイムアタックランキング -->
                 ${gameMode == "timeattack" ? `<table class="result-metrics">
@@ -87,7 +89,7 @@ export default class Resultpage extends Page {
         }
     }
 
-    public static createTimeattackResultHTML(level: Levels) {
+    public static createTimeattackResultHTML(level: Levels): string {
         const results = [...manager.state.resultsTimeattack[level]].sort((resultX, resultY) => resultX.totalTimeMs - resultY.totalTimeMs);
         const tbhtml = results.map((result, idx) => {
             let detailTime = "";

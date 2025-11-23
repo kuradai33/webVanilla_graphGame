@@ -22,6 +22,15 @@ export class ReverseQueue<T> {
         this._queue.pop();
     }
 
+    public length() {
+        return this._queue.length;
+    }
+
+    public back() {
+        if (this._queue.length == 0) return undefined;
+        return this._queue[this._queue.length - 1];
+    }
+
     /**
      * 先頭から最新→最古の順に並んだキューを返す
      * @returns キューの中身

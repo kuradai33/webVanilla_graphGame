@@ -139,7 +139,7 @@ export default class Titlepage extends Page {
                             </tr>
                         </thead>
                         <tbody>
-                            ${Resultpage.createTimeattackResultHTML("easy")}
+                            ${Resultpage.createTimeattackResultHTML("easy")[0]}
                         </tbody>
                     </table>
                 </section>
@@ -163,7 +163,7 @@ export default class Titlepage extends Page {
                             </tr>
                         </thead>
                         <tbody>
-                            ${Resultpage.createTimeattackResultHTML("normal")}
+                            ${Resultpage.createTimeattackResultHTML("normal")[0]}
                         </tbody>
                     </table>
                 </section>
@@ -187,7 +187,7 @@ export default class Titlepage extends Page {
                             </tr>
                         </thead>
                         <tbody>
-                            ${Resultpage.createTimeattackResultHTML("hard")}
+                            ${Resultpage.createTimeattackResultHTML("hard")[0]}
                         </tbody>
                     </table>
                 </section>
