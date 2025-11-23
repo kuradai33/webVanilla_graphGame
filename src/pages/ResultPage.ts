@@ -13,7 +13,7 @@ export default class Resultpage extends Page {
     override display(): void {
         const gameMode = manager.state.settings.mode;
         const latestTimeattackResultTime = manager.state.resultsTimeattack[manager.state.settings.timeattackLevel][Math.min(manager.state.resultsTimeattack[manager.state.settings.timeattackLevel].length - 1, 0)].totalTimeMs;
-        const latestArcadeResultTime = manager.state.resultsArcade.back()?.timeMs;
+        const latestArcadeResultTime = manager.state.resultsArcade.front()?.timeMs;
         this.root.innerHTML = `
             <section class="screen-result">
                 <h2>結果</h2>

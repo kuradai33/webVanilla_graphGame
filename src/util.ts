@@ -26,9 +26,9 @@ export class ReverseQueue<T> {
         return this._queue.length;
     }
 
-    public back() {
+    public front() {
         if (this._queue.length == 0) return undefined;
-        return this._queue[this._queue.length - 1];
+        return this._queue[0];
     }
 
     /**
