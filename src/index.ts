@@ -8,6 +8,8 @@ export const manager = new PageManager(page);
 document.addEventListener("DOMContentLoaded", () => {
     if (!window.localStorage) {
         console.log("localstorage非対応です");
+        manager.goto("title");
+        return;
     }
     const dataAdv = window.localStorage.getItem("adv");
     if (dataAdv) {
