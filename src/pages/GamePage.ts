@@ -22,9 +22,6 @@ export default class Gamepage extends Page {
      */
     stopwatch?: NeonStopwatch;
 
-    controller: AbortController;
-    signal: AbortSignal;
-
     /* これ以降は定数 */
     /**
      * ゲーム画面描画用のキャンバスのサイズ
@@ -36,8 +33,6 @@ export default class Gamepage extends Page {
 
     constructor(root: HTMLElement) {
         super(root);
-        this.controller = new AbortController();
-        this.signal = this.controller.signal;
     }
 
     /**
