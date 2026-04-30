@@ -178,6 +178,7 @@ export default class GameEngine {
             case "LeftRight":
                 const gen1 = new LeftRightGen();
                 g = gen1.create(canvas, cntNode);
+                break;
             case "Delaunay":
                 const gen2 = new DelaunayPlaneGraphGen();
                 g = gen2.create(canvas, cntNode);
