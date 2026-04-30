@@ -3,7 +3,7 @@ import Gamepage from "./GamePage";
 import Resultpage from "./ResultPage";
 import Page from "./Page";
 
-import { Levels, DEFAULT_TIMEATTACK_LEVEL } from "../define";
+import { Levels, LEVELS, DEFAULT_TIMEATTACK_LEVEL } from "../define";
 import { ReverseQueue } from "../util";
 
 type PageLabel = "title" | "game" | "result";
@@ -69,6 +69,14 @@ export default class PageManager {
                 break;
         }
         this.curPage.display();
+    }
+
+    public loadTimeattackResults(data: ResultTimeattack) {
+        this.state.resultsTimeattack = data;
+        for (const level of LEVELS) {
+            const maxId = data[level].reduce((max, r) => Math.max(max, r.id), 0);
+            this.resultNextId[level] = maxId + 1;
+        }
     }
 
     public addTimeattackResult(level: Levels, name: string, totalTimeMs: number, timeMsByRound: number[]) {

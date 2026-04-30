@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
         manager.state.settings.advMode = true;
 
         const resultsTimeJson = window.localStorage.getItem("resultsTime");
-        if (resultsTimeJson) manager.state.resultsTimeattack = JSON.parse(resultsTimeJson);
+        if (resultsTimeJson) manager.loadTimeattackResults(JSON.parse(resultsTimeJson));
         const resultsArcadeJson = window.localStorage.getItem("resultsArcade")
         if (resultsArcadeJson) {
             const datas = JSON.parse(resultsArcadeJson);
