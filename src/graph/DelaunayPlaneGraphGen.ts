@@ -65,11 +65,11 @@ export default class DelaunayPlaneGraphGenerator implements PlaneGraphGenerator 
 
 /* =========================== Delaunay実装（Bowyer–Watson） =========================== */
 
-type Point = { x: number; y: number; id: number }; // id >= 0
-type Tri = { a: number; b: number; c: number; ccx: number; ccy: number; ccr2: number }; // 頂点は pts の index
+export type Point = { x: number; y: number; id: number }; // id >= 0
+export type Tri = { a: number; b: number; c: number; ccx: number; ccy: number; ccr2: number }; // 頂点は pts の index
 
 /** メイン：Bowyer–Watson */
-function bowyerWatson(pts: Point[], W: number, H: number): Tri[] {
+export function bowyerWatson(pts: Point[], W: number, H: number): Tri[] {
     // super-triangle を十分大きく作成
     const big = 1e6;
     const pA: Point = { x: -big, y: -big, id: -1 };
@@ -130,7 +130,7 @@ function bowyerWatson(pts: Point[], W: number, H: number): Tri[] {
 }
 
 /** 3点から三角形＋外接円情報を作る（work は先頭に仮想点が入っている点配列） */
-function makeTri(a: number, b: number, c: number, work: Point[]): Tri {
+export function makeTri(a: number, b: number, c: number, work: Point[]): Tri {
     // 反時計回りに整える（安定のため）
     if (!isCCW(work[a], work[b], work[c])) [b, c] = [c, b];
     const { x: ax, y: ay } = work[a];
@@ -157,14 +157,14 @@ function makeTri(a: number, b: number, c: number, work: Point[]): Tri {
 }
 
 /** p が三角形 t の外接円の内部（≒中心からの距離^2 < r^2 + ε）にあるか */
-function inCircumcircle(px: number, py: number, t: Tri): boolean {
+export function inCircumcircle(px: number, py: number, t: Tri): boolean {
     const dx = px - t.ccx;
     const dy = py - t.ccy;
     return dx * dx + dy * dy <= t.ccr2 - 1e-7; // ちょい厳しめ（退化対策）
 }
 
 /** 反時計回り判定 */
-function isCCW(a: Point, b: Point, c: Point): boolean {
+export function isCCW(a: Point, b: Point, c: Point): boolean {
     return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) > 0;
 }
 
@@ -172,7 +172,7 @@ function isCCW(a: Point, b: Point, c: Point): boolean {
  * 穴の境界を構成する辺だけを取り出す
  * - bad 三角形群の辺を集め、同じ辺が2回現れたものは内部辺として打ち消す
  */
-function uniqueBoundary(edges: Array<{ u: number; v: number }>) {
+export function uniqueBoundary(edges: Array<{ u: number; v: number }>) {
     const key = (u: number, v: number) => (u < v ? `${u},${v}` : `${v},${u}`);
     const map = new Map<string, { u: number; v: number; cnt: number }>();
     for (const e of edges) {
