@@ -55,9 +55,7 @@ export default class DelaunayPlaneGraphGenerator implements PlaneGraphGenerator 
         // 5) エッジをGraphに登録
         for (const key of edgeSet) {
             const [u, v] = key.split(",").map((s) => parseInt(s, 10));
-            console.log(key);
             const e = new GraphEdge(ctx, nodes[u], nodes[v]);
-            console.log(e);
             g.addGraphElement(e);
         }
 
