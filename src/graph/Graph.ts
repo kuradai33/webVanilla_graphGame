@@ -393,6 +393,7 @@ export class GraphEdge extends Shape {
         const coefNume = (a1y - b2y) * (b1x - b2x) - (a1x - b2x) * (b1y - b2y);
         const coefDeno = (a1y - a2y) * (b1x - b2x) - (a1x - a2x) * (b1y - b2y);
 
+        if (coefDeno === 0) return null;
         const coef = coefNume / coefDeno;
 
         return { y: coef * (a2y - a1y) + a1y, x: coef * (a2x - a1x) + a1x };
